@@ -30,12 +30,7 @@ app.use(express.json());
 
 // Health check endpoint
 app.get("/", (req, res) => {
-  return res.json({
-    message: "Backend is running!",
-    timestamp: new Date().toISOString(),
-    status: "healthy",
-    database: dbConnected ? "connected" : "disconnected",
-  });
+  res.send("Hello World");
 });
 
 app.use("/api/auth", authRoutes);
