@@ -1,49 +1,110 @@
 import nodemailer from "nodemailer";
+import User from "../modals/User.js";
+import Otp from "../modals/Otp.js";
 
-export const sendOtp = async (email, otp) => {
-  const transporter = nodemailer.createTransport({
-    host: process.env.EMAIL_HOST,
-    port: 587,
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS,
-    },
-    tls: {
-      rejectUnauthorized: false,
-    },
-  });
+export const sendOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
 
-  const subject = "Email Verification - CareerStack";
-  const message = `
-    <div style="font-family: Arial, sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 10px;">
-      <div style="text-align: center; margin-bottom: 20px;">
-        <h2 style="color: #000000;">CareerStack</h2>
-      </div>
-      <h3 style="color: #333333;">Email Verification</h3>
-      <p style="color: #666666; font-size: 16px;">Your verification code is:</p>
-      <div style="background-color: #f5f5f5; padding: 15px; text-align: center; font-size: 32px; font-weight: bold; letter-spacing: 5px; border-radius: 8px; margin: 20px 0;">
-        ${otp}
-      </div>
-      <p style="color: #666666; font-size: 14px;">This code will expire in 10 minutes.</p>
-      <p style="color: #999999; font-size: 12px; margin-top: 30px;">If you didn't request this, please ignore this email.</p>
-      <hr style="border: none; border-top: 1px solid #e0e0e0; margin: 20px 0;" />
-      <p style="color: #999999; font-size: 12px; text-align: center;">&copy; 2024 CareerStack. All rights reserved.</p>
-    </div>
-  `;
+    if (!email) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is required",
+      });
+    }
 
-  const options = {
-    from: process.env.EMAIL_USER,
-    to: email,
-    subject: subject,
-    html: message,
-  };
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    await Otp.create({ email, otp, type: "email" });
+
+    // Send OTP via email
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.NODEMAILER_EMAIL,
+        pass: process.env.NODEMAILER_PASS,
+      },
+    });
+
+    await transporter.sendMail({
+      from: process.env.NODEMAILER_EMAIL,
+      to: email,
+      subject: "OTP Verification",
+      text: `Your OTP for verification is: ${otp}. Valid for 10 minutes.`,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "OTP sent successfully to email",
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Error sending OTP",
+    });
+  }
+};
+
+export const verifyOtp = async (req, res) => {
+  const { email, otp, purpose } = req.body;
 
   try {
-    const info = await transporter.sendMail(options);
-    console.log("Email sent:", info.messageId);
-    return { success: true, messageId: info.messageId };
+    const otpRecord = await Otp.findOne({ email, otp }).exec();
+
+    if (!otpRecord) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid OTP",
+      });
+    }
+
+    // Check expiry
+    const otpAge = (Date.now() - otpRecord.createdAt) / (1000 * 60);
+    if (otpAge > 10) {
+      await OTP.deleteOne({ _id: otpRecord._id });
+      return res.status(400).json({
+        success: false,
+        message: "OTP has expired",
+      });
+    }
+
+    // Delete OTP after successful verification
+    await Otp.deleteOne({ _id: otpRecord._id });
+
+    if (purpose === "login") {
+      const user = await User.findOne({ email });
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: "User not found",
+        });
+      }
+
+      const token = jwt.sign(
+        { id: user._id, email: user.email, role: user.role },
+        process.env.JWT_SECRET,
+        { expiresIn: "7d" },
+      );
+
+      const { password, ...userData } = user._doc;
+
+      return res.status(200).json({
+        success: true,
+        message: "OTP verified successfully",
+        token,
+        data: userData,
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      message: "OTP verified successfully",
+    });
   } catch (error) {
-    console.error("Email error:", error);
-    return { success: false, error: error.message };
+    console.error(error);
+    res.status(500).json({
+      success: false,
+      message: "Error verifying OTP",
+    });
   }
 };

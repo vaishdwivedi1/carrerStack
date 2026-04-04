@@ -1,8 +1,7 @@
 // controllers/authController.js
-import User from "../modals/User.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import Otp from "../modals/Otp.js";
+import User from "../modals/User.js";
 
 export const registerUser = async (req, res) => {
   try {

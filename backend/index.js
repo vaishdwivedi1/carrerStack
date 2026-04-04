@@ -3,7 +3,7 @@ dotenv.config();
 import express from "express";
 import connectDb from "./config/db.js";
 import cors from "cors";
-import authRoutes from "./router/authRoutes.js";
+import authRoutes from "./routes/authRoutes.js";
 
 const app = express();
 
@@ -14,7 +14,7 @@ async function ensureDbConnection() {
   if (cachedDb && cachedDb.readyState === 1) {
     return cachedDb;
   }
-  
+
   try {
     cachedDb = await connectDb();
     return cachedDb;
@@ -60,18 +60,18 @@ app.get("/", (req, res) => {
 // Vercel serverless handler - MANUAL IMPLEMENTATION
 export default async function handler(req, res) {
   console.log(`[${req.method}] ${req.url}`);
-  
+
   // Set response headers
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
-  
+  res.setHeader("Access-Control-Allow-Credentials", "true");
+  res.setHeader("Access-Control-Allow-Origin", req.headers.origin || "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type,Authorization");
+
   // Handle preflight
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     return res.status(200).end();
   }
-  
+
   try {
     // Convert Express app to handle the request
     await new Promise((resolve, reject) => {
@@ -87,3 +87,7 @@ export default async function handler(req, res) {
     }
   }
 }
+
+app.listen(8080, () => {
+  console.log("Server is runing");
+});

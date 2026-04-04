@@ -1,27 +1,22 @@
-import {
-  Lock,
-  Mail,
-  User,
-  CheckCircle,
-  ArrowRight,
-  ArrowLeft,
-} from "lucide-react";
+import { Lock, Mail, User, ArrowRight, ArrowLeft } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import logo from "../assets/logo.png";
+import { POSTMethod } from "../utils/server";
+import { API } from "../utils/APIS";
 
 const Signup = () => {
   const navigate = useNavigate();
-  const [step, setStep] = useState(1); // 1: Account Details, 2: Verify Email
+  const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     username: "",
     email: "",
     password: "",
   });
   const [otp, setOtp] = useState("");
-  const [generatedOtp, setGeneratedOtp] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [emailForOtp, setEmailForOtp] = useState("");
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -43,88 +38,86 @@ const Signup = () => {
     }
 
     setLoading(true);
+    setError("");
 
-    // Generate random 6-digit OTP
-    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-    setGeneratedOtp(otpCode);
+    try {
+      // Send OTP to email using your backend API
+      await POSTMethod(API.sendOTP, {
+        email: formData.email,
+      });
 
-    // Mock API call to send email
-    console.log(`Sending OTP ${otpCode} to ${formData.email}`);
-
-    // In real implementation, you would call your backend:
-    // const response = await fetch("/api/auth/send-otp", {
-    //   method: "POST",
-    //   headers: { "Content-Type": "application/json" },
-    //   body: JSON.stringify({ email: formData.email, otp: otpCode })
-    // });
-
-    // Simulate API delay
-    setTimeout(() => {
-      alert(
-        `Demo OTP: ${otpCode}\n(In production, this will be sent to your email)`,
-      );
+      setEmailForOtp(formData.email);
       setStep(2);
+    } catch (err) {
+      setError(
+        err.response?.data?.message || "Failed to send OTP. Please try again.",
+      );
+    } finally {
       setLoading(false);
-    }, 1000);
+    }
   };
 
   // Step 2: Verify OTP and complete signup
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
 
-    if (otp !== generatedOtp) {
-      setError("Invalid OTP. Please try again.");
+    if (!otp || otp.length !== 6) {
+      setError("Please enter a valid 6-digit OTP");
       return;
     }
 
     setLoading(true);
+    setError("");
 
-    // Call your backend to register user
     try {
-      const response = await fetch(
-        "http://localhost:8080/api/auth/v1/registerUser",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(formData),
-        },
-      );
+      // First verify OTP
+      await POSTMethod(API.verifyOTP, {
+        email: emailForOtp,
+        otp: otp,
+        purpose: "registration",
+      });
 
-      const data = await response.json();
+      // Then register the user
+      const response = await POSTMethod(API.register, {
+        username: formData.username,
+        email: formData.email,
+        password: formData.password,
+        otp: otp,
+      });
 
-      if (response.ok) {
-        localStorage.setItem("user", JSON.stringify(data.user));
-        localStorage.setItem("token", data.token);
-        navigate("/dashboard");
-      } else {
-        setError(data.message || "Registration failed");
-      }
-    } catch (err) {
-      // Mock registration for demo
-      console.log("Backend not connected, using mock registration");
-      localStorage.setItem("user", JSON.stringify(formData));
-      localStorage.setItem("token", "mock-token-123");
+      // Store user data and token
+      localStorage.setItem("user", JSON.stringify(response.user));
+      localStorage.setItem("token", response.token);
+
       navigate("/dashboard");
+    } catch (err) {
+      setError(
+        err.response?.data?.message || "Verification failed. Please try again.",
+      );
     } finally {
       setLoading(false);
     }
   };
 
-  const handleResendOtp = () => {
-    const newOtp = Math.floor(100000 + Math.random() * 900000).toString();
-    setGeneratedOtp(newOtp);
-    alert(`New OTP: ${newOtp}`);
+  const handleResendOtp = async () => {
+    setLoading(true);
     setError("");
+
+    try {
+      await POSTMethod("/auth/v1/send-otp", {
+        email: emailForOtp,
+      });
+      alert("New OTP sent successfully!");
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to resend OTP");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleGoogleLogin = () => {
-    const mockGoogleUser = {
-      username: "Google User",
-      email: "user@gmail.com",
-    };
-    localStorage.setItem("user", JSON.stringify(mockGoogleUser));
-    localStorage.setItem("token", "google-mock-token");
-    navigate("/dashboard");
+    // For Google OAuth, you would typically redirect to backend Google OAuth endpoint
+    window.location.href = "http://localhost:8080/api/auth/google";
   };
 
   return (
@@ -144,7 +137,7 @@ const Signup = () => {
           <p className="text-gray-500 text-sm mt-1">
             {step === 1
               ? "Enter your details to get started"
-              : `We sent a code to ${formData.email}`}
+              : `We sent a code to ${emailForOtp}`}
           </p>
         </div>
 
@@ -258,7 +251,7 @@ const Signup = () => {
                   onChange={(e) => setOtp(e.target.value)}
                   required
                   maxLength={6}
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition text-center text-xl tracking-wider"
+                  className="w-full pl-4 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition text-center text-xl tracking-wider"
                   placeholder="000000"
                 />
               </div>
@@ -286,9 +279,10 @@ const Signup = () => {
               <button
                 type="button"
                 onClick={handleResendOtp}
-                className="text-sm text-black hover:underline cursor-pointer"
+                disabled={loading}
+                className="text-sm text-black hover:underline cursor-pointer disabled:opacity-50"
               >
-                Resend
+                Resend OTP
               </button>
             </div>
           </form>
@@ -310,6 +304,11 @@ const Signup = () => {
               onClick={handleGoogleLogin}
               className="w-full flex items-center justify-center gap-3 px-4 py-2.5 border border-gray-300 rounded-lg hover:bg-gray-50 transition"
             >
+              <img
+                src="https://www.google.com/favicon.ico"
+                alt="Google"
+                className="w-5 h-5"
+              />
               <span className="font-medium text-gray-700">
                 Continue with Google
               </span>
