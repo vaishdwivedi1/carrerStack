@@ -20,17 +20,22 @@ app.use(
 
 app.use(express.json());
 
-// Health check endpoint
-app.get("/", (req, res) => {
-  res.send("Hello World");
-});
-
-app.use("/api/auth", authRoutes);
+// app.use("/api/auth", authRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
   console.error(err.stack);
   res.status(500).json({ error: "Something went wrong!" });
+});
+
+// Health check endpoint
+app.get("/", (req, res) => {
+  console.log("Root endpoint hit");
+  res.json({
+    message: "Backend is running!",
+    timestamp: new Date().toISOString(),
+    status: "healthy",
+  });
 });
 
 // Create the serverless handler
