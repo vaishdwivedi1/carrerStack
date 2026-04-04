@@ -9,15 +9,7 @@ import serverless from "serverless-http";
 const app = express();
 
 // Database connection with error handling
-let dbConnected = false;
-try {
-  await connectDb(); // Add await
-  dbConnected = true;
-  console.log("Database connected successfully");
-} catch (error) {
-  console.error("Database connection failed:", error);
-  dbConnected = false;
-}
+await connectDb();
 
 app.use(
   cors({
