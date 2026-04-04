@@ -8,8 +8,32 @@ import serverless from "serverless-http";
 
 const app = express();
 
-// Database connection with error handling
-await connectDb();
+// Global cache for database connection
+let cachedDb = null;
+
+async function ensureDbConnection() {
+  if (cachedDb && cachedDb.readyState === 1) {
+    return cachedDb;
+  }
+  
+  try {
+    cachedDb = await connectDb();
+    return cachedDb;
+  } catch (error) {
+    console.error("Database connection failed:", error);
+    throw error;
+  }
+}
+
+// Middleware to ensure DB connection before handling requests
+app.use(async (req, res, next) => {
+  try {
+    await ensureDbConnection();
+    next();
+  } catch (error) {
+    res.status(503).json({ error: "Database connection failed" });
+  }
+});
 
 app.use(
   cors({
@@ -19,7 +43,6 @@ app.use(
 );
 
 app.use(express.json());
-
 app.use("/api/auth", authRoutes);
 
 // Error handling middleware
@@ -28,13 +51,19 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: "Something went wrong!" });
 });
 
-// Health check endpoint - FIXED VERSION
+// Health check endpoint
 app.get("/", (req, res) => {
   console.log("Root endpoint hit");
-  res.status(200).send("Backend is running!"); // CHANGE: Use send() instead of json()
+  res.status(200).send("Backend is running!");
 });
 
-// Create the serverless handler
-const handler = serverless(app);
+// For local development
+if (process.env.NODE_ENV !== "production") {
+  const PORT = process.env.PORT || 5000;
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
+  });
+}
 
+const handler = serverless(app);
 export default handler;
