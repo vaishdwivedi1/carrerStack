@@ -4,11 +4,10 @@ import express from "express";
 import connectDb from "./config/db.js";
 import cors from "cors";
 import authRoutes from "./router/authRoutes.js";
-import serverless from "serverless-http";
 
 const app = express();
 
-// Global cache for database connection
+// Database connection with error handling
 let cachedDb = null;
 
 async function ensureDbConnection() {
@@ -25,7 +24,16 @@ async function ensureDbConnection() {
   }
 }
 
-// Middleware to ensure DB connection before handling requests
+app.use(
+  cors({
+    origin: ["http://localhost:5173", "https://carrer-stack.vercel.app"],
+    credentials: true,
+  }),
+);
+
+app.use(express.json());
+
+// Middleware to ensure DB connection
 app.use(async (req, res, next) => {
   try {
     await ensureDbConnection();
@@ -35,14 +43,6 @@ app.use(async (req, res, next) => {
   }
 });
 
-app.use(
-  cors({
-    origin: ["http://localhost:5173", "https://carrer-stack.vercel.app"],
-    credentials: true,
-  }),
-);
-
-app.use(express.json());
 app.use("/api/auth", authRoutes);
 
 // Error handling middleware
@@ -54,16 +54,36 @@ app.use((err, req, res, next) => {
 // Health check endpoint
 app.get("/", (req, res) => {
   console.log("Root endpoint hit");
-  res.status(200).send("Backend is running!");
+  res.status(200).json({ message: "Backend is running!" });
 });
 
-// For local development
-if (process.env.NODE_ENV !== "production") {
-  const PORT = process.env.PORT || 5000;
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-  });
+// Vercel serverless handler - MANUAL IMPLEMENTATION
+export default async function handler(req, res) {
+  console.log(`[${req.method}] ${req.url}`);
+  
+  // Set response headers
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
+  
+  // Handle preflight
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+  
+  try {
+    // Convert Express app to handle the request
+    await new Promise((resolve, reject) => {
+      app(req, res, (err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
+  } catch (error) {
+    console.error("Handler error:", error);
+    if (!res.headersSent) {
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
 }
-
-const handler = serverless(app);
-export default handler;
