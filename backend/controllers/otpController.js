@@ -1,6 +1,6 @@
 // controllers/otpController.js
+import { sendOtp } from "../middleware/sendOtp.js";
 import Otp from "../modals/Otp.js";
-import { sendOtp } from "../utils/sendOtp.js";
 
 // Send OTP (can be called for both initial send and resend)
 export const sendVerificationOtp = async (req, res) => {
