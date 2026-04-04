@@ -1,6 +1,7 @@
 import nodemailer from "nodemailer";
 import User from "../modals/User.js";
 import Otp from "../modals/Otp.js";
+import jwt from "jsonwebtoken";
 
 export const sendOtp = async (req, res) => {
   try {
@@ -82,7 +83,7 @@ export const verifyOtp = async (req, res) => {
 
       const token = jwt.sign(
         { id: user._id, email: user.email, role: user.role },
-        process.env.JWT_SECRET,
+        process.env.JWTTOKEN,
         { expiresIn: "7d" },
       );
 

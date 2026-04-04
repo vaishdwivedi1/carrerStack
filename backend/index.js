@@ -61,11 +61,11 @@ app.get("/", (req, res) => {
 });
 
 // Only start server if not in Vercel environment
-// if (process.env.NODE_ENV !== "production") {
-//   app.listen(5000, () => {
-//     console.log("Server is running on http://localhost:5000");
-//   });
-// }
+if (process.env.NODE_ENV !== "production") {
+  app.listen(5000, () => {
+    console.log("Server is running on http://localhost:5000");
+  });
+}
 
 // Vercel serverless handler
 export default async function handler(req, res) {
