@@ -1,9 +1,9 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Mail, Lock } from "lucide-react";
-import logo from "../assets/logo.png";
+import { Mail, Lock, Eye, EyeOff } from "lucide-react";
 import { POSTMethod } from "../utils/server";
 import { API } from "../utils/APIS";
+import logo from "../assets/logo.png";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -16,6 +16,7 @@ const Login = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showOtpInput, setShowOtpInput] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -55,7 +56,7 @@ const Login = () => {
     setError("");
 
     try {
-      await POSTMethod("/auth/v1/send-otp", {
+      await POSTMethod(API.sendOTP, {
         email: formData.email,
       });
       setShowOtpInput(true);
@@ -78,7 +79,7 @@ const Login = () => {
     setError("");
 
     try {
-      const response = await POSTMethod("/auth/v1/verify-otp", {
+      const response = await POSTMethod(API.verifyOTP, {
         email: formData.email,
         otp: formData.otp,
         purpose: "login",
@@ -117,7 +118,7 @@ const Login = () => {
                 setShowOtpInput(false);
                 setError("");
               }}
-              className={`text-sm ${!isOtpLogin ? "text-black font-semibold" : "text-gray-500"}`}
+              className={`text-sm ${!isOtpLogin ? "text-black font-semibold border-b-2 border-black" : "text-gray-500"}`}
             >
               Password Login
             </button>
@@ -127,7 +128,7 @@ const Login = () => {
                 setShowOtpInput(false);
                 setError("");
               }}
-              className={`text-sm ${isOtpLogin ? "text-black font-semibold" : "text-gray-500"}`}
+              className={`text-sm ${isOtpLogin ? "text-black font-semibold border-b-2 border-black" : "text-gray-500"}`}
             >
               OTP Login
             </button>
@@ -194,14 +195,25 @@ const Login = () => {
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
                   required
-                  className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition"
+                  className="w-full pl-10 pr-12 py-2.5 border border-gray-200 rounded-lg focus:outline-none focus:border-black focus:ring-1 focus:ring-black transition"
                   placeholder="••••••••"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4" />
+                  ) : (
+                    <Eye className="w-4 h-4" />
+                  )}
+                </button>
               </div>
             </div>
 
