@@ -1,5 +1,9 @@
 import express from "express";
-import { logoutUser, registerUser } from "../controllers/authController.js";
+import {
+  logoutUser,
+  registerUser,
+  loginWithPassword,
+} from "../controllers/authController.js";
 import { sendOtp, verifyOtp } from "../middleware/sendOtp.js";
 import passport from "passport";
 import jwt from "jsonwebtoken";
@@ -8,6 +12,7 @@ const router = express.Router();
 
 // Regular auth routes
 router.post("/v1/register", registerUser);
+router.post("/v1/login", loginWithPassword);
 router.post("/v1/send-otp", sendOtp);
 router.post("/v1/verify-otp", verifyOtp);
 router.post("/v1/logoutUser", logoutUser);

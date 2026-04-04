@@ -66,6 +66,42 @@ export const registerUser = async (req, res) => {
   }
 };
 
+export const loginWithPassword = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password)
+      return res.status(400).json({ message: "Invalid payload" });
+
+    const user = await User.findOne({ email });
+
+    if (!user) return res.status(400).json({ message: "User not registered" });
+
+    const hashPass = await bcrypt.compare(password, user.password);
+
+    if (!hashPass) return res.status(400).json({ message: "Invalid details" });
+
+    const token = jwt.sign(
+      { id: user._id, email: user.email },
+      process.env.JWTTOKEN,
+      {
+        expiresIn: "1d",
+      },
+    );
+    const userWithoutPassword = {
+      _id: user._id,
+      username: user.username,
+      email: user.email,
+      isEmailVerified: user.isEmailVerified,
+      avatar: user.avatar,
+    };
+
+    return res.status(200).json({
+      message: "Logged in",
+      data: { user: userWithoutPassword, token: token },
+    });
+  } catch (error) {}
+};
 export const logoutUser = async (req, res) => {
   try {
     // Get token from header
