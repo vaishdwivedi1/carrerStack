@@ -7,7 +7,17 @@ import authRoutes from "./router/authRoutes.js";
 import serverless from "serverless-http";
 
 const app = express();
-connectDb();
+
+// Database connection with error handling
+let dbConnected = false;
+try {
+  await connectDb(); // Add await
+  dbConnected = true;
+  console.log("Database connected successfully");
+} catch (error) {
+  console.error("Database connection failed:", error);
+  dbConnected = false;
+}
 
 app.use(
   cors({
@@ -18,24 +28,25 @@ app.use(
 
 app.use(express.json());
 
-// paths
+// Health check endpoint
 app.get("/", (req, res) => {
-  console.log("Root endpoint hit");
   res.json({
     message: "Backend is running!",
     timestamp: new Date().toISOString(),
     status: "healthy",
+    database: dbConnected ? "connected" : "disconnected",
   });
 });
 
 app.use("/api/auth", authRoutes);
 
-// app.listen(process.env.PORT, () => {
-//   console.log(`Server started at ${process.env.PORT}`);
-// });
+// Error handling middleware
+app.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({ error: "Something went wrong!" });
+});
 
 // Create the serverless handler
 const handler = serverless(app);
 
-// Export the handler directly
 export default handler;
