@@ -31,14 +31,11 @@ app.use((err, req, res, next) => {
 // Health check endpoint
 app.get("/", (req, res) => {
   console.log("Root endpoint hit");
-  res.setHeader("Content-Type", "application/json"); // ADD THIS
-  res.status(200).json({
-    // CHANGE: Use status(200) explicitly
+  return res.status(200).json({
     message: "Backend is running!",
     timestamp: new Date().toISOString(),
     status: "healthy",
   });
-  res.end(); // ADD THIS - explicitly end the response
 });
 
 // Create the serverless handler
