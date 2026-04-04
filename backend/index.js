@@ -30,7 +30,7 @@ app.use(express.json());
 
 // Health check endpoint
 app.get("/", (req, res) => {
-  res.json({
+  return res.json({
     message: "Backend is running!",
     timestamp: new Date().toISOString(),
     status: "healthy",
