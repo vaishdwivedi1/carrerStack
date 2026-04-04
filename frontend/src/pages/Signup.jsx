@@ -98,7 +98,7 @@ const Signup = () => {
       localStorage.setItem("user", JSON.stringify(response.user));
       localStorage.setItem("token", response.token);
 
-      navigate("/dashboard");
+      navigate("/build-resume");
     } catch (err) {
       setError(
         err.response?.data?.message || "Verification failed. Please try again.",
@@ -126,7 +126,7 @@ const Signup = () => {
 
   const handleGoogleLogin = () => {
     // For Google OAuth, you would typically redirect to backend Google OAuth endpoint
-    window.location.href = "http://localhost:8080/api/auth/google";
+    window.location.href = "http://localhost:5000/api/auth/google";
   };
 
   return (

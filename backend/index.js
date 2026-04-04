@@ -4,6 +4,8 @@ import express from "express";
 import connectDb from "./config/db.js";
 import cors from "cors";
 import authRoutes from "./routes/authRoutes.js";
+import "./middleware/passport.js";
+import passport from "passport";
 
 const app = express();
 
@@ -32,6 +34,7 @@ app.use(
 );
 
 app.use(express.json());
+app.use(passport.initialize());
 
 // Middleware to ensure DB connection
 app.use(async (req, res, next) => {
@@ -57,7 +60,14 @@ app.get("/", (req, res) => {
   res.status(200).json({ message: "Backend is running!" });
 });
 
-// Vercel serverless handler - MANUAL IMPLEMENTATION
+// Only start server if not in Vercel environment
+// if (process.env.NODE_ENV !== "production") {
+//   app.listen(5000, () => {
+//     console.log("Server is running on http://localhost:5000");
+//   });
+// }
+
+// Vercel serverless handler
 export default async function handler(req, res) {
   console.log(`[${req.method}] ${req.url}`);
 
@@ -87,7 +97,3 @@ export default async function handler(req, res) {
     }
   }
 }
-
-app.listen(8080, () => {
-  console.log("Server is runing");
-});

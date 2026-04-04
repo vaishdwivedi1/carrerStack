@@ -8,6 +8,7 @@ import Login from "./pages/Login";
 import Profile from "./pages/Profile";
 import Signup from "./pages/Signup";
 import Tasks from "./pages/Tasks";
+import AuthSuccess from "./pages/AuthSuccess";
 
 // Protected Route wrapper component
 const ProtectedRoute = ({ children }) => {
@@ -24,6 +25,7 @@ const App = () => {
         <Route path="/login" element={<Login />} />
         <Route path="/signup" element={<Signup />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/auth-success" element={<AuthSuccess />} />
 
         {/* Protected Routes - User must be logged in */}
         <Route

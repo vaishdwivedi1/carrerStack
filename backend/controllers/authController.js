@@ -1,4 +1,3 @@
-// controllers/authController.js
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
 import User from "../modals/User.js";
@@ -37,8 +36,13 @@ export const registerUser = async (req, res) => {
     const token = jwt.sign(
       { id: user._id, email: user.email, username: user.username },
       process.env.JWTTOKEN,
-      { expiresIn: "1d" },
+      { expiresIn: "7d" },
     );
+
+    // Save token to user
+    user.token = token;
+    user.isLoggedIn = true;
+    await user.save();
 
     // Remove password from response
     const userWithoutPassword = {
@@ -46,17 +50,51 @@ export const registerUser = async (req, res) => {
       username: user.username,
       email: user.email,
       isEmailVerified: user.isEmailVerified,
+      avatar: user.avatar,
     };
 
     return res.status(201).json({
       message: "User created successfully",
       user: userWithoutPassword,
-      token, // Token generated here after OTP verification
+      token,
     });
   } catch (error) {
     console.log({ error });
     return res
       .status(500)
       .json({ message: "Internal server error", error: error.message });
+  }
+};
+
+export const logoutUser = async (req, res) => {
+  try {
+    // Get token from header
+    const token = req.headers.authorization?.split(" ")[1];
+
+    if (!token) {
+      return res.status(400).json({
+        success: false,
+        message: "No token provided",
+      });
+    }
+
+    // Verify token and get user
+    const decoded = jwt.verify(token, process.env.JWTTOKEN);
+    const userId = decoded.id;
+
+    await User.findByIdAndUpdate(userId, {
+      isLoggedIn: false,
+      token: null,
+    });
+
+    return res.status(200).json({
+      success: true,
+      message: "Logged out successfully",
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
   }
 };
