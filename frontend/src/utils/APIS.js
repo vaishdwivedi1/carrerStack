@@ -3,4 +3,6 @@ export const API = {
   register: "/auth/v1/register",
   sendOTP: "/auth/v1/send-otp",
   verifyOTP: "/auth/v1/verify-otp",
+  getProfile: "/profile/v1/getProfile",
+  editProfile: "/profile/v1/editProfile",
 };

@@ -6,6 +6,7 @@ import cors from "cors";
 import authRoutes from "./routes/authRoutes.js";
 import "./middleware/passport.js";
 import passport from "passport";
+import profileRoutes from "./routes/profileRoutes.js";
 
 const app = express();
 
@@ -47,6 +48,7 @@ app.use(async (req, res, next) => {
 });
 
 app.use("/api/auth", authRoutes);
+app.use("/api/profile", profileRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
