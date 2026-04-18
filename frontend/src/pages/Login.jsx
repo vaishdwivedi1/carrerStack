@@ -87,7 +87,7 @@ const Login = () => {
 
       localStorage.setItem("user", JSON.stringify(response.data));
       localStorage.setItem("token", response.token);
-      navigate("/dashboard");
+      navigate("/build-resume");
     } catch (err) {
       setError(err.response?.data?.message || "Invalid OTP");
     } finally {

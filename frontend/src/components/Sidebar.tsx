@@ -19,13 +19,11 @@ const Sidebar = () => {
   };
 
   const menuItems = [
-    // { path: "/dashboard", name: "Dashboard", icon: LayoutDashboard },
     { path: "/build-resume", name: "Build Resume", icon: FileText },
     { path: "/compare-resume", name: "Compare Resume", icon: GitCompare },
     { path: "/content-calendar", name: "Calendar", icon: Calendar },
     { path: "/generate-post", name: "Posts", icon: PenTool },
     { path: "/tasks", name: "Tasks", icon: CheckSquare },
-    // { path: "/profile", name: "Profile", icon: User },
   ];
 
   return (
