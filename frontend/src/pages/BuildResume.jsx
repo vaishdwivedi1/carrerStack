@@ -2,6 +2,7 @@ import {
   AlignCenter,
   AlignLeft,
   AlignRight,
+  Award,
   Bold,
   Briefcase,
   Code2,
@@ -10,47 +11,65 @@ import {
   FileText,
   FolderGit2,
   GraduationCap,
+  Heart,
   Highlighter,
   Italic,
+  Languages,
   Loader2,
+  MapPin,
   Plus,
   PlusCircle,
   RotateCcw,
   Trash2,
+  Trophy,
   Type,
   Underline,
   User as UserIcon,
   Wand2,
   X,
 } from "lucide-react";
-import { useRef, useState, useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
 
-// Empty default resume data
+// Empty default resume data matching new structure
 const defaultResumeData = {
-  personal: {
-    name: "",
+  user_profile: {
+    full_name: "",
     email: "",
     phone: "",
-    portfolio: "",
-    linkedin: "",
-    behance: "",
-    title: "",
+    location: "",
+    professional_title: "",
+    linkedin_url: "",
+    github_url: "",
+    portfolio_url: "",
+    behance_url: "",
   },
   summary: "",
+  skills: {
+    languages: [],
+    frameworks: [],
+    tools: [],
+    softwares: [],
+    databases: [],
+    cloud: [],
+    others: [],
+  },
   experience: [],
   projects: [],
-  skills: [],
   education: [],
-  customSections: [],
+  certifications: [],
+  achievements: [],
+  languages: [],
+  volunteering: [],
+  hobbies: [],
+  custom_sections: [],
 };
 
-// Fixed Rich Text Editor Component
+// Rich Text Editor Component
 const RichTextEditor = ({ value, onChange, placeholder, className = "" }) => {
   const editorRef = useRef(null);
   const [showColorPicker, setShowColorPicker] = useState(false);
   const [isFocused, setIsFocused] = useState(false);
 
-  // Initialize editor content
   useEffect(() => {
     if (editorRef.current && value !== editorRef.current.innerHTML) {
       editorRef.current.innerHTML = value || "";
@@ -98,7 +117,6 @@ const RichTextEditor = ({ value, onChange, placeholder, className = "" }) => {
             execCommand("bold");
           }}
           className="p-1.5 rounded hover:bg-gray-200"
-          title="Bold"
         >
           <Bold size={16} />
         </button>
@@ -109,7 +127,6 @@ const RichTextEditor = ({ value, onChange, placeholder, className = "" }) => {
             execCommand("italic");
           }}
           className="p-1.5 rounded hover:bg-gray-200"
-          title="Italic"
         >
           <Italic size={16} />
         </button>
@@ -120,7 +137,6 @@ const RichTextEditor = ({ value, onChange, placeholder, className = "" }) => {
             execCommand("underline");
           }}
           className="p-1.5 rounded hover:bg-gray-200"
-          title="Underline"
         >
           <Underline size={16} />
         </button>
@@ -232,7 +248,6 @@ const RichTextEditor = ({ value, onChange, placeholder, className = "" }) => {
         onBlur={() => setIsFocused(false)}
         className="p-3 min-h-[150px] focus:outline-none prose prose-sm max-w-none"
         style={{ fontFamily: "inherit" }}
-        data-placeholder={placeholder}
       />
       {(!value || value === "<br>") && !isFocused && (
         <div
@@ -261,29 +276,7 @@ const AIAssistant = ({
   const handleEnhance = async () => {
     setIsLoading(true);
     await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    let enhanced = "";
-
-    if (sectionType === "summary") {
-      enhanced =
-        currentContent ||
-        "Results-driven professional with 5+ years of experience. Proven track record of delivering exceptional results through strategic thinking and innovative solutions.";
-    } else if (sectionType === "project") {
-      enhanced = `✨ ${currentContent || "Developed and launched a full-stack web application that served 10,000+ users. Implemented responsive design and optimized performance resulting in 40% faster load times. Technologies used: React, Node.js, MongoDB."}`;
-    } else if (sectionType === "skill") {
-      enhanced = `✨ ${currentContent || "• Technical: JavaScript, Python, React, Node.js, SQL\n• Soft Skills: Leadership, Communication, Problem-solving\n• Tools: Git, Docker, AWS, Figma"}`;
-    } else if (sectionType === "education") {
-      enhanced = `✨ ${currentContent || "Master of Business Administration (MBA) - [University Name], 2020-2022\n• GPA: 3.8/4.0\n• Relevant Coursework: Strategic Management, Marketing Analytics\n\nBachelor of Technology in Computer Science - [University Name], 2016-2020\n• Graduated with Honors\n• Led university coding club"}`;
-    } else if (sectionType === "experience") {
-      enhanced =
-        currentContent ||
-        "• Led cross-functional teams to successfully deliver 15+ projects ahead of schedule\n• Increased operational efficiency by 30% through process optimization\n• Recognized as 'Top Performer' for 3 consecutive quarters";
-    } else {
-      enhanced = currentContent || "Your enhanced content will appear here.";
-    }
-
-    enhanced += `\n\n💡 Tip: Be specific about your achievements and use action verbs.`;
-
+    let enhanced = currentContent || "Your enhanced content will appear here.";
     setAiSuggestion(enhanced);
     setIsLoading(false);
   };
@@ -314,20 +307,17 @@ const AIAssistant = ({
         </div>
         <div className="p-6 space-y-4">
           <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-            <p className="text-sm text-purple-800">✨ AI can help you:</p>
-            <ul className="text-sm text-purple-700 mt-2 space-y-1">
-              <li>• Improve grammar and sentence structure</li>
-              <li>• Make your writing more professional</li>
-              <li>• Add impactful action verbs</li>
-              <li>• Quantify your achievements</li>
-            </ul>
+            <p className="text-sm text-purple-800">
+              ✨ AI can help you improve grammar, make writing more
+              professional, and add impactful action verbs.
+            </p>
           </div>
           <textarea
             placeholder="Describe what you want to improve..."
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             rows={3}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg"
           />
           <button
             onClick={handleEnhance}
@@ -366,58 +356,46 @@ const AIAssistant = ({
 // Quick Fill Form
 const QuickFillForm = ({ onGenerate, onClose }) => {
   const [formData, setFormData] = useState({
-    name: "",
-    title: "",
+    full_name: "",
+    professional_title: "",
     email: "",
     phone: "",
-    experience: "",
-    skills: "",
-    education: "",
+    location: "",
     summary: "",
   });
 
   const handleGenerate = () => {
     const generatedResume = {
-      personal: {
-        name: formData.name || "",
+      user_profile: {
+        full_name: formData.full_name || "",
         email: formData.email || "",
         phone: formData.phone || "",
-        title: formData.title || "",
-        portfolio: "",
-        linkedin: "",
-        behance: "",
+        location: formData.location || "",
+        professional_title: formData.professional_title || "",
+        linkedin_url: "",
+        github_url: "",
+        portfolio_url: "",
+        behance_url: "",
       },
       summary: formData.summary || "",
-      experience: formData.experience
-        .split("\n")
-        .filter((e) => e.trim())
-        .map((exp, idx) => ({
-          id: Date.now() + idx,
-          title: exp.split(" at ")[0] || "",
-          company: exp.split(" at ")[1] || "",
-          period: "",
-          highlights: [""],
-        })),
-      skills: formData.skills
-        ? [
-            {
-              id: Date.now().toString(),
-              category: "Skills",
-              items: formData.skills.split(",").map((s) => s.trim()),
-            },
-          ]
-        : [],
-      education: formData.education
-        .split("\n")
-        .filter((e) => e.trim())
-        .map((edu, idx) => ({
-          id: Date.now() + idx,
-          degree: edu.split(" at ")[0] || "",
-          institution: edu.split(" at ")[1] || "",
-          period: "",
-          gpa: "",
-        })),
-      customSections: [],
+      skills: {
+        languages: [],
+        frameworks: [],
+        tools: [],
+        softwares: [],
+        databases: [],
+        cloud: [],
+        others: [],
+      },
+      experience: [],
+      projects: [],
+      education: [],
+      certifications: [],
+      achievements: [],
+      languages: [],
+      volunteering: [],
+      hobbies: [],
+      custom_sections: [],
     };
     onGenerate(generatedResume);
     onClose();
@@ -438,25 +416,25 @@ const QuickFillForm = ({ onGenerate, onClose }) => {
           </button>
         </div>
         <div className="p-6 space-y-4">
+          <input
+            type="text"
+            placeholder="Full Name"
+            value={formData.full_name}
+            onChange={(e) =>
+              setFormData({ ...formData, full_name: e.target.value })
+            }
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+          />
+          <input
+            type="text"
+            placeholder="Professional Title (e.g., Senior Software Engineer)"
+            value={formData.professional_title}
+            onChange={(e) =>
+              setFormData({ ...formData, professional_title: e.target.value })
+            }
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+          />
           <div className="grid grid-cols-2 gap-4">
-            <input
-              type="text"
-              placeholder="Full Name"
-              value={formData.name}
-              onChange={(e) =>
-                setFormData({ ...formData, name: e.target.value })
-              }
-              className="px-4 py-2 border border-gray-300 rounded-lg"
-            />
-            <input
-              type="text"
-              placeholder="Professional Title"
-              value={formData.title}
-              onChange={(e) =>
-                setFormData({ ...formData, title: e.target.value })
-              }
-              className="px-4 py-2 border border-gray-300 rounded-lg"
-            />
             <input
               type="email"
               placeholder="Email"
@@ -476,38 +454,20 @@ const QuickFillForm = ({ onGenerate, onClose }) => {
               className="px-4 py-2 border border-gray-300 rounded-lg"
             />
           </div>
+          <input
+            type="text"
+            placeholder="Location (e.g., San Francisco, CA)"
+            value={formData.location}
+            onChange={(e) =>
+              setFormData({ ...formData, location: e.target.value })
+            }
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+          />
           <textarea
             placeholder="Professional Summary"
             value={formData.summary}
             onChange={(e) =>
               setFormData({ ...formData, summary: e.target.value })
-            }
-            rows={3}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-          />
-          <textarea
-            placeholder="Work Experience (one per line)&#10;e.g., Software Engineer at Google"
-            value={formData.experience}
-            onChange={(e) =>
-              setFormData({ ...formData, experience: e.target.value })
-            }
-            rows={4}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-          />
-          <textarea
-            placeholder="Skills (comma-separated)&#10;e.g., React, Python, Figma"
-            value={formData.skills}
-            onChange={(e) =>
-              setFormData({ ...formData, skills: e.target.value })
-            }
-            rows={2}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-          />
-          <textarea
-            placeholder="Education (one per line)&#10;e.g., B.Tech at IIT Delhi"
-            value={formData.education}
-            onChange={(e) =>
-              setFormData({ ...formData, education: e.target.value })
             }
             rows={3}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg"
@@ -528,7 +488,7 @@ const Modal = ({ isOpen, onClose, title, children }) => {
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
+      <div className="bg-white rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl">
         <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
           <h3 className="text-xl font-semibold text-gray-800">{title}</h3>
           <button
@@ -540,111 +500,6 @@ const Modal = ({ isOpen, onClose, title, children }) => {
         </div>
         <div className="p-6">{children}</div>
       </div>
-    </div>
-  );
-};
-
-// Custom Section Form
-const CustomSectionForm = ({ section, onSave, onCancel }) => {
-  const [formData, setFormData] = useState(
-    section || { title: "", items: [{ id: Date.now(), content: "" }] },
-  );
-  const [showAIAssistant, setShowAIAssistant] = useState(false);
-
-  const addItem = () =>
-    setFormData({
-      ...formData,
-      items: [...formData.items, { id: Date.now(), content: "" }],
-    });
-  const updateItem = (id, content) =>
-    setFormData({
-      ...formData,
-      items: formData.items.map((item) =>
-        item.id === id ? { ...item, content } : item,
-      ),
-    });
-  const removeItem = (id) =>
-    setFormData({
-      ...formData,
-      items: formData.items.filter((item) => item.id !== id),
-    });
-
-  return (
-    <div className="space-y-4">
-      <div className="flex justify-end">
-        <button
-          type="button"
-          onClick={() => setShowAIAssistant(true)}
-          className="text-sm text-purple-600 hover:text-purple-700 flex items-center gap-1"
-        >
-          <Wand2 size={14} /> AI Enhance Section
-        </button>
-      </div>
-      <input
-        type="text"
-        placeholder="Section Title (e.g., Hobbies, Certifications, Awards)"
-        value={formData.title}
-        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-        className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-      />
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-2">
-          Items
-        </label>
-        {formData.items.map((item, index) => (
-          <div key={item.id} className="flex gap-2 mb-2">
-            <RichTextEditor
-              value={item.content}
-              onChange={(value) => updateItem(item.id, value)}
-              placeholder={`Item ${index + 1}`}
-              className="flex-1"
-            />
-            <button
-              type="button"
-              onClick={() => removeItem(item.id)}
-              className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
-            >
-              <Trash2 size={18} />
-            </button>
-          </div>
-        ))}
-        <button
-          type="button"
-          onClick={addItem}
-          className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1 mt-2"
-        >
-          <Plus size={16} /> Add Item
-        </button>
-      </div>
-      <div className="flex justify-end gap-3 pt-4">
-        <button
-          onClick={onCancel}
-          className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-        >
-          Cancel
-        </button>
-        <button
-          onClick={() => onSave(formData)}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-        >
-          Save Section
-        </button>
-      </div>
-      {showAIAssistant && (
-        <AIAssistant
-          currentContent={JSON.stringify(formData)}
-          onUpdate={(newContent) => {
-            try {
-              const parsed = JSON.parse(newContent);
-              setFormData(parsed);
-            } catch (e) {}
-            setShowAIAssistant(false);
-          }}
-          onClose={() => setShowAIAssistant(false)}
-          sectionType="custom"
-          fieldName={formData.title || "Custom Section"}
-        />
-      )}
     </div>
   );
 };
@@ -670,6 +525,7 @@ const BuildResume = () => {
   const updateResumeData = (section, data) =>
     setResumeData((prev) => ({ ...prev, [section]: data }));
 
+  // Experience CRUD
   const addExperience = (exp) =>
     setResumeData((prev) => ({
       ...prev,
@@ -688,6 +544,7 @@ const BuildResume = () => {
       experience: prev.experience.filter((exp) => exp.id !== id),
     }));
 
+  // Projects CRUD
   const addProject = (project) =>
     setResumeData((prev) => ({
       ...prev,
@@ -706,24 +563,7 @@ const BuildResume = () => {
       projects: prev.projects.filter((proj) => proj.id !== id),
     }));
 
-  const addSkill = (skill) =>
-    setResumeData((prev) => ({
-      ...prev,
-      skills: [...prev.skills, { ...skill, id: Date.now().toString() }],
-    }));
-  const updateSkill = (id, updatedSkill) =>
-    setResumeData((prev) => ({
-      ...prev,
-      skills: prev.skills.map((skill) =>
-        skill.id === id ? { ...skill, ...updatedSkill } : skill,
-      ),
-    }));
-  const deleteSkill = (id) =>
-    setResumeData((prev) => ({
-      ...prev,
-      skills: prev.skills.filter((skill) => skill.id !== id),
-    }));
-
+  // Education CRUD
   const addEducation = (edu) =>
     setResumeData((prev) => ({
       ...prev,
@@ -742,48 +582,174 @@ const BuildResume = () => {
       education: prev.education.filter((edu) => edu.id !== id),
     }));
 
+  // Certifications CRUD
+  const addCertification = (cert) =>
+    setResumeData((prev) => ({
+      ...prev,
+      certifications: [
+        ...prev.certifications,
+        { ...cert, id: Date.now().toString() },
+      ],
+    }));
+  const updateCertification = (id, updatedCert) =>
+    setResumeData((prev) => ({
+      ...prev,
+      certifications: prev.certifications.map((cert) =>
+        cert.id === id ? { ...cert, ...updatedCert } : cert,
+      ),
+    }));
+  const deleteCertification = (id) =>
+    setResumeData((prev) => ({
+      ...prev,
+      certifications: prev.certifications.filter((cert) => cert.id !== id),
+    }));
+
+  // Achievements CRUD
+  const addAchievement = (ach) =>
+    setResumeData((prev) => ({
+      ...prev,
+      achievements: [
+        ...prev.achievements,
+        { ...ach, id: Date.now().toString() },
+      ],
+    }));
+  const updateAchievement = (id, updatedAch) =>
+    setResumeData((prev) => ({
+      ...prev,
+      achievements: prev.achievements.map((ach) =>
+        ach.id === id ? { ...ach, ...updatedAch } : ach,
+      ),
+    }));
+  const deleteAchievement = (id) =>
+    setResumeData((prev) => ({
+      ...prev,
+      achievements: prev.achievements.filter((ach) => ach.id !== id),
+    }));
+
+  // Languages CRUD
+  const addLanguage = (lang) =>
+    setResumeData((prev) => ({
+      ...prev,
+      languages: [...prev.languages, { ...lang, id: Date.now().toString() }],
+    }));
+  const updateLanguage = (id, updatedLang) =>
+    setResumeData((prev) => ({
+      ...prev,
+      languages: prev.languages.map((lang) =>
+        lang.id === id ? { ...lang, ...updatedLang } : lang,
+      ),
+    }));
+  const deleteLanguage = (id) =>
+    setResumeData((prev) => ({
+      ...prev,
+      languages: prev.languages.filter((lang) => lang.id !== id),
+    }));
+
+  // Volunteering CRUD
+  const addVolunteering = (vol) =>
+    setResumeData((prev) => ({
+      ...prev,
+      volunteering: [
+        ...prev.volunteering,
+        { ...vol, id: Date.now().toString() },
+      ],
+    }));
+  const updateVolunteering = (id, updatedVol) =>
+    setResumeData((prev) => ({
+      ...prev,
+      volunteering: prev.volunteering.map((vol) =>
+        vol.id === id ? { ...vol, ...updatedVol } : vol,
+      ),
+    }));
+  const deleteVolunteering = (id) =>
+    setResumeData((prev) => ({
+      ...prev,
+      volunteering: prev.volunteering.filter((vol) => vol.id !== id),
+    }));
+
+  // Skills update
+  const updateSkills = (category, values) => {
+    setResumeData((prev) => ({
+      ...prev,
+      skills: { ...prev.skills, [category]: values },
+    }));
+  };
+
+  const addSkillItem = (category, value) => {
+    if (value.trim()) {
+      setResumeData((prev) => ({
+        ...prev,
+        skills: {
+          ...prev.skills,
+          [category]: [...prev.skills[category], value.trim()],
+        },
+      }));
+    }
+  };
+
+  const removeSkillItem = (category, index) => {
+    setResumeData((prev) => ({
+      ...prev,
+      skills: {
+        ...prev.skills,
+        [category]: prev.skills[category].filter((_, i) => i !== index),
+      },
+    }));
+  };
+
   const updateSummary = (newSummary) => {
     updateResumeData("summary", newSummary);
     setEditingSummary(false);
   };
 
+  // Custom Sections
   const addCustomSection = (section) =>
     setResumeData((prev) => ({
       ...prev,
-      customSections: [
-        ...prev.customSections,
+      custom_sections: [
+        ...prev.custom_sections,
         { ...section, id: Date.now().toString() },
       ],
     }));
   const updateCustomSection = (id, updatedSection) =>
     setResumeData((prev) => ({
       ...prev,
-      customSections: prev.customSections.map((section) =>
+      custom_sections: prev.custom_sections.map((section) =>
         section.id === id ? { ...section, ...updatedSection } : section,
       ),
     }));
   const deleteCustomSection = (id) =>
     setResumeData((prev) => ({
       ...prev,
-      customSections: prev.customSections.filter(
+      custom_sections: prev.custom_sections.filter(
         (section) => section.id !== id,
       ),
     }));
 
-  // Experience Form
+  // Form Components
   const ExperienceForm = ({ exp, onSave, onCancel }) => {
     const [formData, setFormData] = useState(
-      exp || { title: "", company: "", period: "", highlights: [""] },
+      exp || {
+        company_name: "",
+        role: "",
+        location: "",
+        start_date: "",
+        end_date: "",
+        isPresentCompany: false,
+        highlights: [],
+      },
     );
-    const [showAI, setShowAI] = useState(false);
+    const [newHighlight, setNewHighlight] = useState("");
 
-    const handleHighlightChange = (index, value) => {
-      const newHighlights = [...formData.highlights];
-      newHighlights[index] = value;
-      setFormData({ ...formData, highlights: newHighlights });
+    const addHighlight = () => {
+      if (newHighlight.trim()) {
+        setFormData({
+          ...formData,
+          highlights: [...(formData.highlights || []), newHighlight.trim()],
+        });
+        setNewHighlight("");
+      }
     };
-    const addHighlight = () =>
-      setFormData({ ...formData, highlights: [...formData.highlights, ""] });
     const removeHighlight = (index) =>
       setFormData({
         ...formData,
@@ -792,47 +758,93 @@ const BuildResume = () => {
 
     return (
       <div className="space-y-4">
-        <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={() => setShowAI(true)}
-            className="text-sm text-purple-600 hover:text-purple-700 flex items-center gap-1"
-          >
-            <Wand2 size={14} /> AI Enhance
-          </button>
+        <div className="grid grid-cols-2 gap-4">
+          <input
+            type="text"
+            placeholder="Company Name"
+            value={formData.company_name}
+            onChange={(e) =>
+              setFormData({ ...formData, company_name: e.target.value })
+            }
+            className="px-4 py-2 border border-gray-300 rounded-lg"
+          />
+          <input
+            type="text"
+            placeholder="Role / Title"
+            value={formData.role}
+            onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+            className="px-4 py-2 border border-gray-300 rounded-lg"
+          />
+          <input
+            type="text"
+            placeholder="Location"
+            value={formData.location}
+            onChange={(e) =>
+              setFormData({ ...formData, location: e.target.value })
+            }
+            className="px-4 py-2 border border-gray-300 rounded-lg"
+          />
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Start Date (e.g., Jan 2022)"
+              value={formData.start_date}
+              onChange={(e) =>
+                setFormData({ ...formData, start_date: e.target.value })
+              }
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg"
+            />
+            {!formData.isPresentCompany ? (
+              <input
+                type="text"
+                placeholder="End Date"
+                value={formData.end_date}
+                onChange={(e) =>
+                  setFormData({ ...formData, end_date: e.target.value })
+                }
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg"
+              />
+            ) : (
+              <input
+                type="text"
+                placeholder="Present"
+                value="Present"
+                disabled
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-gray-50"
+              />
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={formData.isPresentCompany}
+              onChange={(e) =>
+                setFormData({
+                  ...formData,
+                  isPresentCompany: e.target.checked,
+                  end_date: e.target.checked ? "" : formData.end_date,
+                })
+              }
+              className="w-4 h-4"
+            />
+            <label className="text-sm text-gray-600">
+              I currently work here
+            </label>
+          </div>
         </div>
-        <input
-          type="text"
-          placeholder="Job Title"
-          value={formData.title}
-          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-        />
-        <input
-          type="text"
-          placeholder="Company"
-          value={formData.company}
-          onChange={(e) =>
-            setFormData({ ...formData, company: e.target.value })
-          }
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-        />
-        <input
-          type="text"
-          placeholder="Period (e.g., Jan 2024 - Present)"
-          value={formData.period}
-          onChange={(e) => setFormData({ ...formData, period: e.target.value })}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-        />
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Highlights
+            Key Responsibilities & Achievements
           </label>
-          {formData.highlights.map((highlight, index) => (
+          {formData.highlights?.map((highlight, index) => (
             <div key={index} className="flex gap-2 mb-2">
               <RichTextEditor
                 value={highlight}
-                onChange={(value) => handleHighlightChange(index, value)}
+                onChange={(value) => {
+                  const newHighlights = [...formData.highlights];
+                  newHighlights[index] = value;
+                  setFormData({ ...formData, highlights: newHighlights });
+                }}
                 placeholder={`Highlight ${index + 1}`}
                 className="flex-1"
               />
@@ -845,13 +857,23 @@ const BuildResume = () => {
               </button>
             </div>
           ))}
-          <button
-            type="button"
-            onClick={addHighlight}
-            className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1 mt-2"
-          >
-            <Plus size={16} /> Add Highlight
-          </button>
+          <div className="flex gap-2 mt-2">
+            <input
+              type="text"
+              value={newHighlight}
+              onChange={(e) => setNewHighlight(e.target.value)}
+              placeholder="Add a responsibility or achievement"
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg"
+              onKeyPress={(e) => e.key === "Enter" && addHighlight()}
+            />
+            <button
+              type="button"
+              onClick={addHighlight}
+              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+            >
+              <Plus size={16} /> Add
+            </button>
+          </div>
         </div>
         <div className="flex justify-end gap-3 pt-4">
           <button
@@ -867,66 +889,77 @@ const BuildResume = () => {
             Save
           </button>
         </div>
-        {showAI && (
-          <AIAssistant
-            currentContent={JSON.stringify(formData)}
-            onUpdate={(newContent) => {
-              try {
-                const parsed = JSON.parse(newContent);
-                setFormData(parsed);
-              } catch (e) {}
-              setShowAI(false);
-            }}
-            onClose={() => setShowAI(false)}
-            sectionType="experience"
-            fieldName="Work Experience"
-          />
-        )}
       </div>
     );
   };
 
-  // Project Form
   const ProjectForm = ({ project, onSave, onCancel }) => {
     const [formData, setFormData] = useState(
-      project || { title: "", description: "", technologies: [] },
+      project || {
+        project_name: "",
+        duration: "",
+        description: "",
+        tech_stack: [],
+        highlights: [],
+        project_link: "",
+        github_link: "",
+        live_link: "",
+      },
     );
     const [techInput, setTechInput] = useState("");
-    const [showAI, setShowAI] = useState(false);
+    const [newHighlight, setNewHighlight] = useState("");
 
-    const addTechnology = () => {
+    const addTech = () => {
       if (techInput.trim()) {
         setFormData({
           ...formData,
-          technologies: [...(formData.technologies || []), techInput.trim()],
+          tech_stack: [...(formData.tech_stack || []), techInput.trim()],
         });
         setTechInput("");
       }
     };
-    const removeTechnology = (index) =>
+    const removeTech = (index) =>
       setFormData({
         ...formData,
-        technologies: formData.technologies.filter((_, i) => i !== index),
+        tech_stack: formData.tech_stack.filter((_, i) => i !== index),
+      });
+    const addHighlight = () => {
+      if (newHighlight.trim()) {
+        setFormData({
+          ...formData,
+          highlights: [...(formData.highlights || []), newHighlight.trim()],
+        });
+        setNewHighlight("");
+      }
+    };
+    const removeHighlight = (index) =>
+      setFormData({
+        ...formData,
+        highlights: formData.highlights.filter((_, i) => i !== index),
       });
 
     return (
       <div className="space-y-4">
-        <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={() => setShowAI(true)}
-            className="text-sm text-purple-600 hover:text-purple-700 flex items-center gap-1"
-          >
-            <Wand2 size={14} /> AI Enhance
-          </button>
+        <div className="grid grid-cols-2 gap-4">
+          <input
+            type="text"
+            placeholder="Project Name"
+            value={formData.project_name}
+            onChange={(e) =>
+              setFormData({ ...formData, project_name: e.target.value })
+            }
+            className="px-4 py-2 border border-gray-300 rounded-lg"
+          />
+          <input
+            type="text"
+            placeholder="Duration (e.g., 3 months)"
+            value={formData.duration}
+            onChange={(e) =>
+              setFormData({ ...formData, duration: e.target.value })
+            }
+            className="px-4 py-2 border border-gray-300 rounded-lg"
+          />
         </div>
-        <input
-          type="text"
-          placeholder="Project Title"
-          value={formData.title}
-          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-        />
         <RichTextEditor
           value={formData.description}
           onChange={(value) => setFormData({ ...formData, description: value })}
@@ -935,7 +968,7 @@ const BuildResume = () => {
         />
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Technologies Used
+            Tech Stack
           </label>
           <div className="flex gap-2 mb-2">
             <input
@@ -944,31 +977,235 @@ const BuildResume = () => {
               onChange={(e) => setTechInput(e.target.value)}
               placeholder="e.g., React, Node.js"
               className="flex-1 px-4 py-2 border border-gray-300 rounded-lg"
-              onKeyPress={(e) => e.key === "Enter" && addTechnology()}
+              onKeyPress={(e) => e.key === "Enter" && addTech()}
             />
             <button
-              type="button"
-              onClick={addTechnology}
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
+              onClick={addTech}
+              className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200"
             >
               Add
             </button>
           </div>
           <div className="flex flex-wrap gap-2">
-            {formData.technologies?.map((tech, index) => (
+            {formData.tech_stack?.map((tech, index) => (
               <span
                 key={index}
                 className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-sm flex items-center gap-1"
               >
                 {tech}
                 <button
-                  onClick={() => removeTechnology(index)}
+                  onClick={() => removeTech(index)}
                   className="hover:text-blue-900"
                 >
                   ×
                 </button>
               </span>
             ))}
+          </div>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Project Highlights
+          </label>
+          {formData.highlights?.map((highlight, index) => (
+            <div key={index} className="flex gap-2 mb-2">
+              <input
+                type="text"
+                value={highlight}
+                onChange={(e) => {
+                  const newHighlights = [...formData.highlights];
+                  newHighlights[index] = e.target.value;
+                  setFormData({ ...formData, highlights: newHighlights });
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg"
+              />
+              <button
+                onClick={() => removeHighlight(index)}
+                className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+              >
+                <Trash2 size={18} />
+              </button>
+            </div>
+          ))}
+          <div className="flex gap-2 mt-2">
+            <input
+              type="text"
+              value={newHighlight}
+              onChange={(e) => setNewHighlight(e.target.value)}
+              placeholder="Add a highlight"
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg"
+              onKeyPress={(e) => e.key === "Enter" && addHighlight()}
+            />
+            <button
+              onClick={addHighlight}
+              className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200"
+            >
+              <Plus size={16} /> Add
+            </button>
+          </div>
+        </div>
+        <div className="grid grid-cols-2 gap-4">
+          <input
+            type="url"
+            placeholder="Project Link"
+            value={formData.project_link}
+            onChange={(e) =>
+              setFormData({ ...formData, project_link: e.target.value })
+            }
+            className="px-4 py-2 border border-gray-300 rounded-lg"
+          />
+          <input
+            type="url"
+            placeholder="GitHub Link"
+            value={formData.github_link}
+            onChange={(e) =>
+              setFormData({ ...formData, github_link: e.target.value })
+            }
+            className="px-4 py-2 border border-gray-300 rounded-lg"
+          />
+          <input
+            type="url"
+            placeholder="Live Demo Link"
+            value={formData.live_link}
+            onChange={(e) =>
+              setFormData({ ...formData, live_link: e.target.value })
+            }
+            className="px-4 py-2 border border-gray-300 rounded-lg"
+          />
+        </div>
+        <div className="flex justify-end gap-3 pt-4">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => onSave(formData)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  const EducationForm = ({ edu, onSave, onCancel }) => {
+    const [formData, setFormData] = useState(
+      edu || {
+        institution_name: "",
+        degree_name: "",
+        start_year: "",
+        end_year: "",
+        grade: "",
+        highlights: [],
+      },
+    );
+    const [newHighlight, setNewHighlight] = useState("");
+    const addHighlight = () => {
+      if (newHighlight.trim()) {
+        setFormData({
+          ...formData,
+          highlights: [...(formData.highlights || []), newHighlight.trim()],
+        });
+        setNewHighlight("");
+      }
+    };
+    const removeHighlight = (index) =>
+      setFormData({
+        ...formData,
+        highlights: formData.highlights.filter((_, i) => i !== index),
+      });
+
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <input
+            type="text"
+            placeholder="Institution Name"
+            value={formData.institution_name}
+            onChange={(e) =>
+              setFormData({ ...formData, institution_name: e.target.value })
+            }
+            className="px-4 py-2 border border-gray-300 rounded-lg"
+          />
+          <input
+            type="text"
+            placeholder="Degree Name"
+            value={formData.degree_name}
+            onChange={(e) =>
+              setFormData({ ...formData, degree_name: e.target.value })
+            }
+            className="px-4 py-2 border border-gray-300 rounded-lg"
+          />
+          <input
+            type="text"
+            placeholder="Start Year"
+            value={formData.start_year}
+            onChange={(e) =>
+              setFormData({ ...formData, start_year: e.target.value })
+            }
+            className="px-4 py-2 border border-gray-300 rounded-lg"
+          />
+          <input
+            type="text"
+            placeholder="End Year"
+            value={formData.end_year}
+            onChange={(e) =>
+              setFormData({ ...formData, end_year: e.target.value })
+            }
+            className="px-4 py-2 border border-gray-300 rounded-lg"
+          />
+          <input
+            type="text"
+            placeholder="Grade / GPA"
+            value={formData.grade}
+            onChange={(e) =>
+              setFormData({ ...formData, grade: e.target.value })
+            }
+            className="px-4 py-2 border border-gray-300 rounded-lg"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Highlights / Achievements
+          </label>
+          {formData.highlights?.map((highlight, index) => (
+            <div key={index} className="flex gap-2 mb-2">
+              <input
+                type="text"
+                value={highlight}
+                onChange={(e) => {
+                  const newHighlights = [...formData.highlights];
+                  newHighlights[index] = e.target.value;
+                  setFormData({ ...formData, highlights: newHighlights });
+                }}
+                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg"
+              />
+              <button
+                onClick={() => removeHighlight(index)}
+                className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
+              >
+                <Trash2 size={18} />
+              </button>
+            </div>
+          ))}
+          <div className="flex gap-2 mt-2">
+            <input
+              type="text"
+              value={newHighlight}
+              onChange={(e) => setNewHighlight(e.target.value)}
+              placeholder="Add an achievement"
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg"
+              onKeyPress={(e) => e.key === "Enter" && addHighlight()}
+            />
+            <button
+              onClick={addHighlight}
+              className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200"
+            >
+              <Plus size={16} /> Add
+            </button>
           </div>
         </div>
         <div className="flex justify-end gap-3 pt-4">
@@ -985,39 +1222,231 @@ const BuildResume = () => {
             Save
           </button>
         </div>
-        {showAI && (
-          <AIAssistant
-            currentContent={JSON.stringify(formData)}
-            onUpdate={(newContent) => {
-              try {
-                const parsed = JSON.parse(newContent);
-                setFormData(parsed);
-              } catch (e) {}
-              setShowAI(false);
-            }}
-            onClose={() => setShowAI(false)}
-            sectionType="project"
-            fieldName="Project"
-          />
-        )}
       </div>
     );
   };
 
-  // Skill Form
-  const SkillForm = ({ skill, onSave, onCancel }) => {
+  const CertificationForm = ({ cert, onSave, onCancel }) => {
     const [formData, setFormData] = useState(
-      skill || { category: "", items: [""] },
+      cert || { name: "", issuer: "", year: "", link: "" },
     );
-    const [showAI, setShowAI] = useState(false);
+    return (
+      <div className="space-y-4">
+        <div className="grid grid-cols-2 gap-4">
+          <input
+            type="text"
+            placeholder="Certification Name"
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            className="px-4 py-2 border border-gray-300 rounded-lg"
+          />
+          <input
+            type="text"
+            placeholder="Issuer (e.g., Google, AWS)"
+            value={formData.issuer}
+            onChange={(e) =>
+              setFormData({ ...formData, issuer: e.target.value })
+            }
+            className="px-4 py-2 border border-gray-300 rounded-lg"
+          />
+          <input
+            type="text"
+            placeholder="Year"
+            value={formData.year}
+            onChange={(e) => setFormData({ ...formData, year: e.target.value })}
+            className="px-4 py-2 border border-gray-300 rounded-lg"
+          />
+          <input
+            type="url"
+            placeholder="Certification Link"
+            value={formData.link}
+            onChange={(e) => setFormData({ ...formData, link: e.target.value })}
+            className="px-4 py-2 border border-gray-300 rounded-lg"
+          />
+        </div>
+        <div className="flex justify-end gap-3 pt-4">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => onSave(formData)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    );
+  };
 
-    const handleItemChange = (index, value) => {
-      const newItems = [...formData.items];
-      newItems[index] = value;
-      setFormData({ ...formData, items: newItems });
+  const AchievementForm = ({ ach, onSave, onCancel }) => {
+    const [formData, setFormData] = useState(
+      ach || { title: "", description: "", year: "" },
+    );
+    return (
+      <div className="space-y-4">
+        <input
+          type="text"
+          placeholder="Achievement Title"
+          value={formData.title}
+          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+        />
+        <RichTextEditor
+          value={formData.description}
+          onChange={(value) => setFormData({ ...formData, description: value })}
+          placeholder="Achievement Description"
+          className="w-full"
+        />
+        <input
+          type="text"
+          placeholder="Year"
+          value={formData.year}
+          onChange={(e) => setFormData({ ...formData, year: e.target.value })}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+        />
+        <div className="flex justify-end gap-3 pt-4">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => onSave(formData)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  const LanguageForm = ({ lang, onSave, onCancel }) => {
+    const [formData, setFormData] = useState(
+      lang || { name: "", proficiency: "" },
+    );
+    const proficiencies = [
+      "Native",
+      "Fluent",
+      "Professional Working",
+      "Limited Working",
+      "Elementary",
+    ];
+    return (
+      <div className="space-y-4">
+        <input
+          type="text"
+          placeholder="Language (e.g., English, Spanish)"
+          value={formData.name}
+          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+        />
+        <select
+          value={formData.proficiency}
+          onChange={(e) =>
+            setFormData({ ...formData, proficiency: e.target.value })
+          }
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+        >
+          <option value="">Select Proficiency</option>
+          {proficiencies.map((p) => (
+            <option key={p} value={p}>
+              {p}
+            </option>
+          ))}
+        </select>
+        <div className="flex justify-end gap-3 pt-4">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => onSave(formData)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  const VolunteeringForm = ({ vol, onSave, onCancel }) => {
+    const [formData, setFormData] = useState(
+      vol || { organization: "", role: "", duration: "", description: "" },
+    );
+    return (
+      <div className="space-y-4">
+        <input
+          type="text"
+          placeholder="Organization"
+          value={formData.organization}
+          onChange={(e) =>
+            setFormData({ ...formData, organization: e.target.value })
+          }
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+        />
+        <input
+          type="text"
+          placeholder="Role"
+          value={formData.role}
+          onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+        />
+        <input
+          type="text"
+          placeholder="Duration (e.g., 2022-2023)"
+          value={formData.duration}
+          onChange={(e) =>
+            setFormData({ ...formData, duration: e.target.value })
+          }
+          className="w-full px-4 py-2 border border-gray-300 rounded-lg"
+        />
+        <RichTextEditor
+          value={formData.description}
+          onChange={(value) => setFormData({ ...formData, description: value })}
+          placeholder="Description of your volunteer work"
+          className="w-full"
+        />
+        <div className="flex justify-end gap-3 pt-4">
+          <button
+            onClick={onCancel}
+            className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => onSave(formData)}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+          >
+            Save
+          </button>
+        </div>
+      </div>
+    );
+  };
+
+  const CustomSectionForm = ({ section, onSave, onCancel }) => {
+    const [formData, setFormData] = useState(
+      section || { title: "", items: [] },
+    );
+    const [newItem, setNewItem] = useState("");
+    const addItem = () => {
+      if (newItem.trim()) {
+        setFormData({
+          ...formData,
+          items: [...formData.items, newItem.trim()],
+        });
+        setNewItem("");
+      }
     };
-    const addItem = () =>
-      setFormData({ ...formData, items: [...formData.items, ""] });
     const removeItem = (index) =>
       setFormData({
         ...formData,
@@ -1026,35 +1455,27 @@ const BuildResume = () => {
 
     return (
       <div className="space-y-4">
-        <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={() => setShowAI(true)}
-            className="text-sm text-purple-600 hover:text-purple-700 flex items-center gap-1"
-          >
-            <Wand2 size={14} /> AI Enhance
-          </button>
-        </div>
         <input
           type="text"
-          placeholder="Category"
-          value={formData.category}
-          onChange={(e) =>
-            setFormData({ ...formData, category: e.target.value })
-          }
+          placeholder="Section Title (e.g., Hobbies, Interests)"
+          value={formData.title}
+          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg"
         />
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Skills
+            Items
           </label>
           {formData.items.map((item, index) => (
             <div key={index} className="flex gap-2 mb-2">
               <input
                 type="text"
                 value={item}
-                onChange={(e) => handleItemChange(index, e.target.value)}
-                placeholder={`Skill ${index + 1}`}
+                onChange={(e) => {
+                  const newItems = [...formData.items];
+                  newItems[index] = e.target.value;
+                  setFormData({ ...formData, items: newItems });
+                }}
                 className="flex-1 px-4 py-2 border border-gray-300 rounded-lg"
               />
               <button
@@ -1065,12 +1486,22 @@ const BuildResume = () => {
               </button>
             </div>
           ))}
-          <button
-            onClick={addItem}
-            className="text-sm text-blue-600 hover:text-blue-700 flex items-center gap-1 mt-2"
-          >
-            <Plus size={16} /> Add Skill
-          </button>
+          <div className="flex gap-2 mt-2">
+            <input
+              type="text"
+              value={newItem}
+              onChange={(e) => setNewItem(e.target.value)}
+              placeholder="Add item"
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg"
+              onKeyPress={(e) => e.key === "Enter" && addItem()}
+            />
+            <button
+              onClick={addItem}
+              className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200"
+            >
+              <Plus size={16} /> Add
+            </button>
+          </div>
         </div>
         <div className="flex justify-end gap-3 pt-4">
           <button
@@ -1086,168 +1517,99 @@ const BuildResume = () => {
             Save
           </button>
         </div>
-        {showAI && (
-          <AIAssistant
-            currentContent={JSON.stringify(formData)}
-            onUpdate={(newContent) => {
-              try {
-                const parsed = JSON.parse(newContent);
-                setFormData(parsed);
-              } catch (e) {}
-              setShowAI(false);
-            }}
-            onClose={() => setShowAI(false)}
-            sectionType="skill"
-            fieldName="Skills"
-          />
-        )}
       </div>
     );
   };
 
-  // Education Form
-  const EducationForm = ({ edu, onSave, onCancel }) => {
-    const [formData, setFormData] = useState(
-      edu || { degree: "", institution: "", period: "", gpa: "" },
-    );
-    const [showAI, setShowAI] = useState(false);
-
-    return (
-      <div className="space-y-4">
-        <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={() => setShowAI(true)}
-            className="text-sm text-purple-600 hover:text-purple-700 flex items-center gap-1"
-          >
-            <Wand2 size={14} /> AI Enhance
-          </button>
-        </div>
-        <input
-          type="text"
-          placeholder="Degree"
-          value={formData.degree}
-          onChange={(e) => setFormData({ ...formData, degree: e.target.value })}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-        />
-        <input
-          type="text"
-          placeholder="Institution"
-          value={formData.institution}
-          onChange={(e) =>
-            setFormData({ ...formData, institution: e.target.value })
-          }
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-        />
-        <input
-          type="text"
-          placeholder="Period"
-          value={formData.period}
-          onChange={(e) => setFormData({ ...formData, period: e.target.value })}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-        />
-        <input
-          type="text"
-          placeholder="GPA"
-          value={formData.gpa}
-          onChange={(e) => setFormData({ ...formData, gpa: e.target.value })}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-        />
-        <div className="flex justify-end gap-3 pt-4">
-          <button
-            onClick={onCancel}
-            className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => onSave(formData)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Save
-          </button>
-        </div>
-        {showAI && (
-          <AIAssistant
-            currentContent={JSON.stringify(formData)}
-            onUpdate={(newContent) => {
-              try {
-                const parsed = JSON.parse(newContent);
-                setFormData(parsed);
-              } catch (e) {}
-              setShowAI(false);
-            }}
-            onClose={() => setShowAI(false)}
-            sectionType="education"
-            fieldName="Education"
-          />
-        )}
-      </div>
-    );
-  };
-
-  // Personal Info Form
   const PersonalInfoForm = ({ data, onSave, onClose }) => {
     const [formData, setFormData] = useState(data);
-    const [showAI, setShowAI] = useState(false);
-
     return (
       <div className="space-y-4">
-        <div className="flex justify-end">
-          <button
-            type="button"
-            onClick={() => setShowAI(true)}
-            className="text-sm text-purple-600 hover:text-purple-700 flex items-center gap-1"
-          >
-            <Wand2 size={14} /> AI Enhance
-          </button>
+        <div className="grid grid-cols-2 gap-4">
+          <input
+            type="text"
+            placeholder="Full Name"
+            value={formData.full_name}
+            onChange={(e) =>
+              setFormData({ ...formData, full_name: e.target.value })
+            }
+            className="px-4 py-2 border border-gray-300 rounded-lg"
+          />
+          <input
+            type="text"
+            placeholder="Professional Title"
+            value={formData.professional_title}
+            onChange={(e) =>
+              setFormData({ ...formData, professional_title: e.target.value })
+            }
+            className="px-4 py-2 border border-gray-300 rounded-lg"
+          />
+          <input
+            type="email"
+            placeholder="Email"
+            value={formData.email}
+            onChange={(e) =>
+              setFormData({ ...formData, email: e.target.value })
+            }
+            className="px-4 py-2 border border-gray-300 rounded-lg"
+          />
+          <input
+            type="tel"
+            placeholder="Phone"
+            value={formData.phone}
+            onChange={(e) =>
+              setFormData({ ...formData, phone: e.target.value })
+            }
+            className="px-4 py-2 border border-gray-300 rounded-lg"
+          />
+          <input
+            type="text"
+            placeholder="Location"
+            value={formData.location}
+            onChange={(e) =>
+              setFormData({ ...formData, location: e.target.value })
+            }
+            className="px-4 py-2 border border-gray-300 rounded-lg"
+          />
         </div>
-        <input
-          type="text"
-          placeholder="Full Name"
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-        />
-        <input
-          type="text"
-          placeholder="Title"
-          value={formData.title}
-          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-        />
-        <input
-          type="email"
-          placeholder="Email"
-          value={formData.email}
-          onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-        />
-        <input
-          type="tel"
-          placeholder="Phone"
-          value={formData.phone}
-          onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-        />
-        <input
-          type="url"
-          placeholder="LinkedIn URL"
-          value={formData.linkedin}
-          onChange={(e) =>
-            setFormData({ ...formData, linkedin: e.target.value })
-          }
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-        />
-        <input
-          type="url"
-          placeholder="Portfolio URL"
-          value={formData.portfolio}
-          onChange={(e) =>
-            setFormData({ ...formData, portfolio: e.target.value })
-          }
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-        />
+        <div className="grid grid-cols-2 gap-4">
+          <input
+            type="url"
+            placeholder="LinkedIn URL"
+            value={formData.linkedin_url}
+            onChange={(e) =>
+              setFormData({ ...formData, linkedin_url: e.target.value })
+            }
+            className="px-4 py-2 border border-gray-300 rounded-lg"
+          />
+          <input
+            type="url"
+            placeholder="GitHub URL"
+            value={formData.github_url}
+            onChange={(e) =>
+              setFormData({ ...formData, github_url: e.target.value })
+            }
+            className="px-4 py-2 border border-gray-300 rounded-lg"
+          />
+          <input
+            type="url"
+            placeholder="Portfolio URL"
+            value={formData.portfolio_url}
+            onChange={(e) =>
+              setFormData({ ...formData, portfolio_url: e.target.value })
+            }
+            className="px-4 py-2 border border-gray-300 rounded-lg"
+          />
+          <input
+            type="url"
+            placeholder="Behance URL"
+            value={formData.behance_url}
+            onChange={(e) =>
+              setFormData({ ...formData, behance_url: e.target.value })
+            }
+            className="px-4 py-2 border border-gray-300 rounded-lg"
+          />
+        </div>
         <div className="flex justify-end gap-3 pt-4">
           <button
             onClick={onClose}
@@ -1262,21 +1624,6 @@ const BuildResume = () => {
             Save
           </button>
         </div>
-        {showAI && (
-          <AIAssistant
-            currentContent={JSON.stringify(formData)}
-            onUpdate={(newContent) => {
-              try {
-                const parsed = JSON.parse(newContent);
-                setFormData(parsed);
-              } catch (e) {}
-              setShowAI(false);
-            }}
-            onClose={() => setShowAI(false)}
-            sectionType="personal"
-            fieldName="Personal Information"
-          />
-        )}
       </div>
     );
   };
@@ -1291,36 +1638,45 @@ const BuildResume = () => {
         style={{ borderBottomColor: `${accentColor}20` }}
       >
         <h1 className="text-4xl font-bold mb-2" style={{ color: accentColor }}>
-          {resumeData.personal.name || "Your Name"}
+          {resumeData.user_profile.full_name || "Your Name"}
         </h1>
         <p className="text-gray-600 mb-3">
-          {resumeData.personal.title || "Professional Title"}
+          {resumeData.user_profile.professional_title || "Professional Title"}
         </p>
         <div className="flex flex-wrap justify-center gap-3 text-sm text-gray-600">
-          {resumeData.personal.email && (
+          {resumeData.user_profile.email && (
             <>
               <a
-                href={`mailto:${resumeData.personal.email}`}
+                href={`mailto:${resumeData.user_profile.email}`}
                 className="hover:underline"
               >
-                {resumeData.personal.email}
+                {resumeData.user_profile.email}
               </a>
               <span>|</span>
             </>
           )}
-          {resumeData.personal.phone && (
+          {resumeData.user_profile.phone && (
             <a
-              href={`tel:${resumeData.personal.phone}`}
+              href={`tel:${resumeData.user_profile.phone}`}
               className="hover:underline"
             >
-              {resumeData.personal.phone}
+              {resumeData.user_profile.phone}
             </a>
           )}
-          {resumeData.personal.linkedin && (
+          {resumeData.user_profile.location && (
+            <>
+              <span>|</span>
+              <span className="flex items-center gap-1">
+                <MapPin size={12} />
+                {resumeData.user_profile.location}
+              </span>
+            </>
+          )}
+          {resumeData.user_profile.linkedin_url && (
             <>
               <span>|</span>
               <a
-                href={resumeData.personal.linkedin}
+                href={resumeData.user_profile.linkedin_url}
                 target="_blank"
                 className="hover:underline"
               >
@@ -1328,11 +1684,23 @@ const BuildResume = () => {
               </a>
             </>
           )}
-          {resumeData.personal.portfolio && (
+          {resumeData.user_profile.github_url && (
             <>
               <span>|</span>
               <a
-                href={resumeData.personal.portfolio}
+                href={resumeData.user_profile.github_url}
+                target="_blank"
+                className="hover:underline"
+              >
+                GitHub
+              </a>
+            </>
+          )}
+          {resumeData.user_profile.portfolio_url && (
+            <>
+              <span>|</span>
+              <a
+                href={resumeData.user_profile.portfolio_url}
                 target="_blank"
                 className="hover:underline"
               >
@@ -1360,6 +1728,46 @@ const BuildResume = () => {
             />
           </section>
         )}
+
+        {/* Skills Section */}
+        {Object.keys(resumeData.skills).some(
+          (cat) => resumeData.skills[cat].length > 0,
+        ) && (
+          <section>
+            <h2
+              className="text-xl font-bold mb-3 pb-1 border-b"
+              style={{
+                color: accentColor,
+                borderBottomColor: `${accentColor}40`,
+              }}
+            >
+              Skills
+            </h2>
+            <div className="space-y-3">
+              {Object.entries(resumeData.skills)
+                .filter(([_, items]) => items.length > 0)
+                .map(([category, items]) => (
+                  <div key={category}>
+                    <h3 className="font-semibold text-gray-800 capitalize">
+                      {category.replace(/_/g, " ")}
+                    </h3>
+                    <div className="flex flex-wrap gap-2 mt-1">
+                      {items.map((skill, idx) => (
+                        <span
+                          key={idx}
+                          className="px-3 py-1 bg-gray-100 rounded-full text-sm text-gray-700"
+                        >
+                          {skill}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+            </div>
+          </section>
+        )}
+
+        {/* Experience */}
         {resumeData.experience.length > 0 && (
           <section>
             <h2
@@ -1371,17 +1779,25 @@ const BuildResume = () => {
             >
               Experience
             </h2>
-            <div className="space-y-4">
+            <div className="space-y-5">
               {resumeData.experience.map((exp) => (
                 <div key={exp.id}>
-                  <div className="flex justify-between items-baseline flex-wrap gap-2">
-                    <h3 className="text-lg font-semibold text-gray-800">
-                      {exp.title}, {exp.company}
-                    </h3>
-                    <span className="text-sm text-gray-500">{exp.period}</span>
+                  <div className="flex justify-between items-start flex-wrap gap-2">
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-800">
+                        {exp.role}
+                      </h3>
+                      <p className="text-gray-600">
+                        {exp.company_name} • {exp.location}
+                      </p>
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      {exp.start_date} -{" "}
+                      {exp.isPresentCompany ? "Present" : exp.end_date}
+                    </div>
                   </div>
                   <ul className="mt-2 space-y-1 list-disc list-inside text-gray-600">
-                    {exp.highlights.map((highlight, idx) => (
+                    {exp.highlights?.map((highlight, idx) => (
                       <li
                         key={idx}
                         className="text-sm"
@@ -1394,6 +1810,8 @@ const BuildResume = () => {
             </div>
           </section>
         )}
+
+        {/* Projects */}
         {resumeData.projects.length > 0 && (
           <section>
             <h2
@@ -1408,43 +1826,46 @@ const BuildResume = () => {
             <div className="space-y-4">
               {resumeData.projects.map((project) => (
                 <div key={project.id}>
-                  <h3 className="text-lg font-semibold text-gray-800">
-                    {project.title}
-                  </h3>
+                  <div className="flex justify-between items-start flex-wrap gap-2">
+                    <h3 className="text-lg font-semibold text-gray-800">
+                      {project.project_name}
+                    </h3>
+                    <span className="text-sm text-gray-500">
+                      {project.duration}
+                    </span>
+                  </div>
                   <div
                     className="text-gray-600 text-sm mt-1"
                     dangerouslySetInnerHTML={{ __html: project.description }}
                   />
+                  <div className="flex flex-wrap gap-2 mt-2">
+                    {project.tech_stack?.map((tech, idx) => (
+                      <span
+                        key={idx}
+                        className="text-xs px-2 py-1 rounded-full"
+                        style={{
+                          backgroundColor: `${accentColor}10`,
+                          color: accentColor,
+                        }}
+                      >
+                        {tech}
+                      </span>
+                    ))}
+                  </div>
+                  <ul className="mt-2 space-y-1 list-disc list-inside text-gray-600">
+                    {project.highlights?.map((highlight, idx) => (
+                      <li key={idx} className="text-sm">
+                        {highlight}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               ))}
             </div>
           </section>
         )}
-        {resumeData.skills.length > 0 && (
-          <section>
-            <h2
-              className="text-xl font-bold mb-3 pb-1 border-b"
-              style={{
-                color: accentColor,
-                borderBottomColor: `${accentColor}40`,
-              }}
-            >
-              Skills
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {resumeData.skills.map((skillCategory) => (
-                <div key={skillCategory.id}>
-                  <h3 className="font-semibold text-gray-800 mb-1">
-                    {skillCategory.category}
-                  </h3>
-                  <p className="text-gray-600 text-sm">
-                    {skillCategory.items.join(", ")}
-                  </p>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
+
+        {/* Education */}
         {resumeData.education.length > 0 && (
           <section>
             <h2
@@ -1459,22 +1880,173 @@ const BuildResume = () => {
             <div className="space-y-3">
               {resumeData.education.map((edu) => (
                 <div key={edu.id}>
-                  <div className="flex justify-between items-baseline flex-wrap gap-2">
+                  <div className="flex justify-between items-start flex-wrap gap-2">
                     <h3 className="text-lg font-semibold text-gray-800">
-                      {edu.degree}
+                      {edu.degree_name}
                     </h3>
-                    <span className="text-sm text-gray-500">{edu.period}</span>
+                    <span className="text-sm text-gray-500">
+                      {edu.start_year} - {edu.end_year}
+                    </span>
                   </div>
-                  <p className="text-gray-600">{edu.institution}</p>
-                  {edu.gpa && (
-                    <p className="text-sm text-gray-500">GPA: {edu.gpa}</p>
+                  <p className="text-gray-600">{edu.institution_name}</p>
+                  {edu.grade && (
+                    <p className="text-sm text-gray-500">Grade: {edu.grade}</p>
                   )}
+                  <ul className="mt-1 space-y-1 list-disc list-inside text-gray-600">
+                    {edu.highlights?.map((highlight, idx) => (
+                      <li key={idx} className="text-sm">
+                        {highlight}
+                      </li>
+                    ))}
+                  </ul>
                 </div>
               ))}
             </div>
           </section>
         )}
-        {resumeData.customSections.map((section) => (
+
+        {/* Certifications */}
+        {resumeData.certifications.length > 0 && (
+          <section>
+            <h2
+              className="text-xl font-bold mb-3 pb-1 border-b"
+              style={{
+                color: accentColor,
+                borderBottomColor: `${accentColor}40`,
+              }}
+            >
+              Certifications
+            </h2>
+            <div className="space-y-2">
+              {resumeData.certifications.map((cert) => (
+                <div key={cert.id}>
+                  <div className="flex justify-between items-start">
+                    <span className="font-medium text-gray-800">
+                      {cert.name}
+                    </span>
+                    <span className="text-sm text-gray-500">{cert.year}</span>
+                  </div>
+                  <p className="text-sm text-gray-600">{cert.issuer}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Achievements */}
+        {resumeData.achievements.length > 0 && (
+          <section>
+            <h2
+              className="text-xl font-bold mb-3 pb-1 border-b"
+              style={{
+                color: accentColor,
+                borderBottomColor: `${accentColor}40`,
+              }}
+            >
+              Achievements
+            </h2>
+            <div className="space-y-3">
+              {resumeData.achievements.map((ach) => (
+                <div key={ach.id}>
+                  <div className="flex justify-between items-start">
+                    <h3 className="font-semibold text-gray-800">{ach.title}</h3>
+                    <span className="text-sm text-gray-500">{ach.year}</span>
+                  </div>
+                  <div
+                    className="text-gray-600 text-sm"
+                    dangerouslySetInnerHTML={{ __html: ach.description }}
+                  />
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Languages */}
+        {resumeData.languages.length > 0 && (
+          <section>
+            <h2
+              className="text-xl font-bold mb-3 pb-1 border-b"
+              style={{
+                color: accentColor,
+                borderBottomColor: `${accentColor}40`,
+              }}
+            >
+              Languages
+            </h2>
+            <div className="flex flex-wrap gap-4">
+              {resumeData.languages.map((lang) => (
+                <div key={lang.id}>
+                  <span className="font-medium text-gray-800">{lang.name}</span>
+                  <span className="text-sm text-gray-500 ml-2">
+                    ({lang.proficiency})
+                  </span>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Volunteering */}
+        {resumeData.volunteering.length > 0 && (
+          <section>
+            <h2
+              className="text-xl font-bold mb-3 pb-1 border-b"
+              style={{
+                color: accentColor,
+                borderBottomColor: `${accentColor}40`,
+              }}
+            >
+              Volunteering
+            </h2>
+            <div className="space-y-3">
+              {resumeData.volunteering.map((vol) => (
+                <div key={vol.id}>
+                  <div className="flex justify-between items-start">
+                    <h3 className="font-semibold text-gray-800">
+                      {vol.role} at {vol.organization}
+                    </h3>
+                    <span className="text-sm text-gray-500">
+                      {vol.duration}
+                    </span>
+                  </div>
+                  <div
+                    className="text-gray-600 text-sm"
+                    dangerouslySetInnerHTML={{ __html: vol.description }}
+                  />
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Hobbies */}
+        {resumeData.hobbies.length > 0 && (
+          <section>
+            <h2
+              className="text-xl font-bold mb-3 pb-1 border-b"
+              style={{
+                color: accentColor,
+                borderBottomColor: `${accentColor}40`,
+              }}
+            >
+              Hobbies & Interests
+            </h2>
+            <div className="flex flex-wrap gap-2">
+              {resumeData.hobbies.map((hobby, idx) => (
+                <span
+                  key={idx}
+                  className="px-3 py-1 bg-gray-100 rounded-full text-sm text-gray-700"
+                >
+                  {hobby}
+                </span>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Custom Sections */}
+        {resumeData.custom_sections.map((section) => (
           <section key={section.id}>
             <h2
               className="text-xl font-bold mb-3 pb-1 border-b"
@@ -1485,13 +2057,11 @@ const BuildResume = () => {
             >
               {section.title}
             </h2>
-            <div className="space-y-2">
-              {section.items.map((item) => (
-                <div
-                  key={item.id}
-                  className="text-gray-700"
-                  dangerouslySetInnerHTML={{ __html: item.content }}
-                />
+            <div className="space-y-1">
+              {section.items.map((item, idx) => (
+                <p key={idx} className="text-gray-700">
+                  {item}
+                </p>
               ))}
             </div>
           </section>
@@ -1548,27 +2118,15 @@ const BuildResume = () => {
           <ResumePreview />
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Left Column */}
             <div className="lg:col-span-1 space-y-6">
-              {/* Personal Card */}
+              {/* Profile Card */}
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 flex justify-between items-center">
                   <h2 className="font-semibold text-gray-800 flex items-center gap-2">
-                    <UserIcon size={18} /> Personal Information
+                    <UserIcon size={18} /> Profile
                   </h2>
                   <div className="flex gap-2">
-                    <button
-                      onClick={() => {
-                        setAiContext({
-                          content: JSON.stringify(resumeData.personal),
-                          sectionType: "personal",
-                          fieldName: "Personal Information",
-                        });
-                        setShowAIAssistant(true);
-                      }}
-                      className="text-purple-600 hover:text-purple-700 text-sm flex items-center gap-1"
-                    >
-                      <Wand2 size={14} /> AI
-                    </button>
                     <button
                       onClick={() => setActiveSection("personal")}
                       className="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1"
@@ -1579,39 +2137,34 @@ const BuildResume = () => {
                 </div>
                 <div className="p-6 space-y-3">
                   <div>
-                    <p className="text-xs text-gray-500 uppercase tracking-wide">
-                      Name
-                    </p>
-                    <p className="font-medium text-gray-900">
-                      {resumeData.personal.name || "Not added"}
+                    <p className="text-xs text-gray-500 uppercase">Full Name</p>
+                    <p className="font-medium">
+                      {resumeData.user_profile.full_name || "Not added"}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 uppercase tracking-wide">
-                      Title
-                    </p>
+                    <p className="text-xs text-gray-500 uppercase">Title</p>
                     <p className="text-gray-700">
-                      {resumeData.personal.title || "Not added"}
+                      {resumeData.user_profile.professional_title ||
+                        "Not added"}
                     </p>
                   </div>
                   <div>
-                    <p className="text-xs text-gray-500 uppercase tracking-wide">
-                      Contact
-                    </p>
-                    {resumeData.personal.email && (
-                      <p className="text-gray-700 break-all">
-                        {resumeData.personal.email}
+                    <p className="text-xs text-gray-500 uppercase">Contact</p>
+                    {resumeData.user_profile.email && (
+                      <p className="text-sm break-all">
+                        {resumeData.user_profile.email}
                       </p>
                     )}
-                    {resumeData.personal.phone && (
-                      <p className="text-gray-700">
-                        {resumeData.personal.phone}
+                    {resumeData.user_profile.phone && (
+                      <p className="text-sm">{resumeData.user_profile.phone}</p>
+                    )}
+                    {resumeData.user_profile.location && (
+                      <p className="text-sm flex items-center gap-1">
+                        <MapPin size={12} />
+                        {resumeData.user_profile.location}
                       </p>
                     )}
-                    {!resumeData.personal.email &&
-                      !resumeData.personal.phone && (
-                        <p className="text-gray-400 text-sm">Not added</p>
-                      )}
                   </div>
                 </div>
               </div>
@@ -1619,26 +2172,11 @@ const BuildResume = () => {
               {/* Summary Card */}
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 flex justify-between items-center">
-                  <h2 className="font-semibold text-gray-800">
-                    Professional Summary
-                  </h2>
+                  <h2 className="font-semibold">Professional Summary</h2>
                   <div className="flex gap-2">
                     <button
-                      onClick={() => {
-                        setAiContext({
-                          content: resumeData.summary,
-                          sectionType: "summary",
-                          fieldName: "Professional Summary",
-                        });
-                        setShowAIAssistant(true);
-                      }}
-                      className="text-purple-600 hover:text-purple-700 text-sm flex items-center gap-1"
-                    >
-                      <Wand2 size={14} /> AI
-                    </button>
-                    <button
                       onClick={() => setEditingSummary(true)}
-                      className="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1"
+                      className="text-blue-600 text-sm"
                     >
                       <Edit2 size={14} /> Edit
                     </button>
@@ -1650,269 +2188,231 @@ const BuildResume = () => {
                     dangerouslySetInnerHTML={{
                       __html:
                         resumeData.summary ||
-                        "<em class='text-gray-400'>No summary added yet.</em>",
+                        "<em class='text-gray-400'>No summary added.</em>",
                     }}
                   />
                 </div>
               </div>
 
-              {/* Skills Card */}
+              {/* Skills Card - Categorized */}
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 flex justify-between items-center">
-                  <h2 className="font-semibold text-gray-800 flex items-center gap-2">
+                  <h2 className="font-semibold flex items-center gap-2">
                     <Code2 size={18} /> Skills
                   </h2>
                   <button
                     onClick={() => setActiveSection("skills")}
-                    className="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1"
+                    className="text-blue-600 text-sm"
                   >
                     <Plus size={14} /> Add
                   </button>
                 </div>
-                <div className="p-6 space-y-4">
-                  {resumeData.skills.length === 0 && (
-                    <p className="text-gray-400 text-sm text-center py-4">
-                      No skills added yet.
+                <div className="p-6">
+                  {Object.keys(resumeData.skills).every(
+                    (cat) => resumeData.skills[cat].length === 0,
+                  ) && (
+                    <p className="text-gray-400 text-sm text-center">
+                      No skills added.
                     </p>
                   )}
-                  {resumeData.skills.map((skillCategory) => (
-                    <div key={skillCategory.id} className="group relative">
-                      <div className="flex justify-between items-start">
-                        <h3 className="font-medium text-gray-800">
-                          {skillCategory.category}
+                  {Object.entries(resumeData.skills)
+                    .filter(([_, items]) => items.length > 0)
+                    .map(([category, items]) => (
+                      <div key={category} className="mb-3">
+                        <h3 className="font-medium text-gray-800 capitalize text-sm">
+                          {category.replace(/_/g, " ")}
                         </h3>
-                        <div className="flex gap-1 opacity-0 group-hover:opacity-100">
-                          <button
-                            onClick={() => {
-                              setEditingItem({
-                                type: "skills",
-                                data: skillCategory,
-                              });
-                              setActiveSection("skillsEdit");
-                            }}
-                            className="p-1 text-gray-400 hover:text-blue-600"
-                          >
-                            <Edit2 size={14} />
-                          </button>
-                          <button
-                            onClick={() => deleteSkill(skillCategory.id)}
-                            className="p-1 text-gray-400 hover:text-red-600"
-                          >
-                            <Trash2 size={14} />
-                          </button>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {items.map((skill, idx) => (
+                            <span
+                              key={idx}
+                              className="px-2 py-0.5 bg-gray-100 rounded text-xs"
+                            >
+                              {skill}
+                            </span>
+                          ))}
                         </div>
                       </div>
-                      <p className="text-sm text-gray-600 mt-1">
-                        {skillCategory.items.join(", ")}
-                      </p>
-                    </div>
-                  ))}
+                    ))}
                 </div>
               </div>
 
-              {/* Education Card */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-                <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 flex justify-between items-center">
-                  <h2 className="font-semibold text-gray-800 flex items-center gap-2">
-                    <GraduationCap size={18} /> Education
-                  </h2>
-                  <button
-                    onClick={() => setActiveSection("education")}
-                    className="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1"
-                  >
-                    <Plus size={14} /> Add
-                  </button>
-                </div>
-                <div className="p-6 space-y-4">
-                  {resumeData.education.length === 0 && (
-                    <p className="text-gray-400 text-sm text-center py-4">
-                      No education added yet.
-                    </p>
-                  )}
-                  {resumeData.education.map((edu) => (
-                    <div
-                      key={edu.id}
-                      className="group relative border-b border-gray-100 last:border-0 pb-3 last:pb-0"
+              {/* Languages Card */}
+              {resumeData.languages.length > 0 && (
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                  <div className="px-6 py-4 border-b flex justify-between">
+                    <h2 className="font-semibold flex items-center gap-2">
+                      <Languages size={18} /> Languages
+                    </h2>
+                    <button
+                      onClick={() => setActiveSection("languages")}
+                      className="text-blue-600 text-sm"
                     >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="font-medium text-gray-800">
-                            {edu.degree || "Degree"}
-                          </h3>
-                          <p className="text-sm text-gray-600">
-                            {edu.institution || "Institution"}
-                          </p>
-                          <p className="text-xs text-gray-400">
-                            {edu.period || "Year"}
-                          </p>
-                          {edu.gpa && (
-                            <p className="text-xs text-gray-500">
-                              GPA: {edu.gpa}
-                            </p>
-                          )}
-                        </div>
-                        <div className="flex gap-1 opacity-0 group-hover:opacity-100">
-                          <button
-                            onClick={() => {
-                              setEditingItem({ type: "education", data: edu });
-                              setActiveSection("educationEdit");
-                            }}
-                            className="p-1 text-gray-400 hover:text-blue-600"
-                          >
-                            <Edit2 size={14} />
-                          </button>
-                          <button
-                            onClick={() => deleteEducation(edu.id)}
-                            className="p-1 text-gray-400 hover:text-red-600"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
+                      <Plus size={14} /> Add
+                    </button>
+                  </div>
+                  <div className="p-6 space-y-2">
+                    {resumeData.languages.map((lang) => (
+                      <div key={lang.id} className="flex justify-between">
+                        <span>{lang.name}</span>
+                        <span className="text-gray-500 text-sm">
+                          {lang.proficiency}
+                        </span>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* Certifications Card */}
+              {resumeData.certifications.length > 0 && (
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                  <div className="px-6 py-4 border-b flex justify-between">
+                    <h2 className="font-semibold flex items-center gap-2">
+                      <Award size={18} /> Certifications
+                    </h2>
+                    <button
+                      onClick={() => setActiveSection("certifications")}
+                      className="text-blue-600 text-sm"
+                    >
+                      <Plus size={14} /> Add
+                    </button>
+                  </div>
+                  <div className="p-6 space-y-3">
+                    {resumeData.certifications.map((cert) => (
+                      <div key={cert.id}>
+                        <p className="font-medium">{cert.name}</p>
+                        <p className="text-sm text-gray-600">
+                          {cert.issuer} • {cert.year}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Custom Sections Card */}
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 flex justify-between items-center">
-                  <h2 className="font-semibold text-gray-800 flex items-center gap-2">
+                  <h2 className="font-semibold flex items-center gap-2">
                     <PlusCircle size={18} /> Custom Sections
                   </h2>
                   <button
                     onClick={() => setShowCustomSection(true)}
-                    className="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1"
+                    className="text-blue-600 text-sm"
                   >
                     <Plus size={14} /> Add
                   </button>
                 </div>
                 <div className="p-6 space-y-4">
-                  {resumeData.customSections.length === 0 && (
-                    <p className="text-gray-400 text-sm text-center py-4">
-                      No custom sections added.
+                  {resumeData.custom_sections.length === 0 && (
+                    <p className="text-gray-400 text-sm text-center">
+                      No custom sections.
                     </p>
                   )}
-                  {resumeData.customSections.map((section) => (
+                  {resumeData.custom_sections.map((section) => (
                     <div
                       key={section.id}
-                      className="group relative border-b border-gray-100 last:border-0 pb-3 last:pb-0"
+                      className="group relative border-b pb-2"
                     >
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="font-medium text-gray-800">
-                            {section.title}
-                          </h3>
-                          <p className="text-sm text-gray-600 mt-1">
-                            {section.items.length} item
-                            {section.items.length !== 1 ? "s" : ""}
-                          </p>
-                        </div>
-                        <div className="flex gap-1 opacity-0 group-hover:opacity-100">
+                      <div className="flex justify-between">
+                        <h3 className="font-medium">{section.title}</h3>
+                        <div className="flex gap-1">
                           <button
                             onClick={() => {
                               setEditingCustomSection(section);
                               setShowCustomSection(true);
                             }}
-                            className="p-1 text-gray-400 hover:text-blue-600"
+                            className="text-gray-400 hover:text-blue-600"
                           >
                             <Edit2 size={14} />
                           </button>
                           <button
                             onClick={() => deleteCustomSection(section.id)}
-                            className="p-1 text-gray-400 hover:text-red-600"
+                            className="text-gray-400 hover:text-red-600"
                           >
                             <Trash2 size={14} />
                           </button>
                         </div>
                       </div>
+                      <p className="text-sm text-gray-500">
+                        {section.items.length} items
+                      </p>
                     </div>
                   ))}
                 </div>
               </div>
             </div>
 
+            {/* Right Column */}
             <div className="lg:col-span-2 space-y-6">
               {/* Experience Card */}
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 flex justify-between items-center">
-                  <h2 className="font-semibold text-gray-800 flex items-center gap-2">
+                  <h2 className="font-semibold flex items-center gap-2">
                     <Briefcase size={18} /> Work Experience
                   </h2>
                   <button
                     onClick={() => setActiveSection("experience")}
-                    className="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1"
+                    className="text-blue-600 text-sm"
                   >
-                    <Plus size={14} /> Add Experience
+                    <Plus size={14} /> Add
                   </button>
                 </div>
                 <div className="p-6 space-y-6">
                   {resumeData.experience.length === 0 && (
-                    <p className="text-gray-400 text-sm text-center py-8">
-                      No work experience added yet.
+                    <p className="text-gray-400 text-center py-8">
+                      No experience added.
                     </p>
                   )}
                   {resumeData.experience.map((exp) => (
-                    <div
-                      key={exp.id}
-                      className="group relative border-b border-gray-100 last:border-0 pb-4 last:pb-0"
-                    >
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <div className="flex justify-between items-baseline flex-wrap gap-2">
-                            <h3 className="font-semibold text-gray-800">
-                              {exp.title || "Title"}
-                            </h3>
-                            <span className="text-sm text-gray-500">
-                              {exp.period || "Date"}
-                            </span>
-                          </div>
-                          <p className="text-gray-600 text-sm mb-2">
-                            {exp.company || "Company"}
+                    <div key={exp.id} className="group relative border-b pb-4">
+                      <div className="flex justify-between">
+                        <div>
+                          <h3 className="font-semibold">{exp.role}</h3>
+                          <p className="text-gray-600 text-sm">
+                            {exp.company_name} • {exp.location}
                           </p>
-                          <ul className="space-y-1">
-                            {exp.highlights
-                              .slice(0, 2)
-                              .map((highlight, idx) => (
-                                <li
-                                  key={idx}
-                                  className="text-sm text-gray-600 flex gap-2"
-                                >
-                                  <span className="text-blue-500">•</span>
-                                  <span
-                                    dangerouslySetInnerHTML={{
-                                      __html:
-                                        highlight.length > 100
-                                          ? highlight.substring(0, 100) + "..."
-                                          : highlight || "Add description",
-                                    }}
-                                  />
-                                </li>
-                              ))}
-                            {exp.highlights.length > 2 && (
-                              <li className="text-sm text-blue-500">
-                                +{exp.highlights.length - 2} more
-                              </li>
-                            )}
-                          </ul>
                         </div>
-                        <div className="flex gap-1 opacity-0 group-hover:opacity-100">
-                          <button
-                            onClick={() => {
-                              setEditingItem({ type: "experience", data: exp });
-                              setActiveSection("experienceEdit");
+                        <div className="text-right">
+                          <span className="text-sm text-gray-500">
+                            {exp.start_date} -{" "}
+                            {exp.isPresentCompany ? "Present" : exp.end_date}
+                          </span>
+                        </div>
+                      </div>
+                      <ul className="mt-2 space-y-1 list-disc list-inside text-gray-600 text-sm">
+                        {exp.highlights?.slice(0, 2).map((h, i) => (
+                          <li
+                            key={i}
+                            dangerouslySetInnerHTML={{
+                              __html:
+                                h.length > 80 ? h.substring(0, 80) + "..." : h,
                             }}
-                            className="p-1 text-gray-400 hover:text-blue-600"
-                          >
-                            <Edit2 size={14} />
-                          </button>
-                          <button
-                            onClick={() => deleteExperience(exp.id)}
-                            className="p-1 text-gray-400 hover:text-red-600"
-                          >
-                            <Trash2 size={14} />
-                          </button>
-                        </div>
+                          />
+                        ))}
+                        {exp.highlights?.length > 2 && (
+                          <li className="text-blue-500">
+                            +{exp.highlights.length - 2} more
+                          </li>
+                        )}
+                      </ul>
+                      <div className="absolute top-0 right-0 flex gap-1 opacity-0 group-hover:opacity-100">
+                        <button
+                          onClick={() => {
+                            setEditingItem({ type: "experience", data: exp });
+                            setActiveSection("experienceEdit");
+                          }}
+                          className="p-1 text-gray-400 hover:text-blue-600"
+                        >
+                          <Edit2 size={14} />
+                        </button>
+                        <button
+                          onClick={() => deleteExperience(exp.id)}
+                          className="p-1 text-gray-400 hover:text-red-600"
+                        >
+                          <Trash2 size={14} />
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -1922,69 +2422,254 @@ const BuildResume = () => {
               {/* Projects Card */}
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 flex justify-between items-center">
-                  <h2 className="font-semibold text-gray-800 flex items-center gap-2">
+                  <h2 className="font-semibold flex items-center gap-2">
                     <FolderGit2 size={18} /> Projects
                   </h2>
                   <button
                     onClick={() => setActiveSection("projects")}
-                    className="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1"
+                    className="text-blue-600 text-sm"
                   >
-                    <Plus size={14} /> Add Project
+                    <Plus size={14} /> Add
                   </button>
                 </div>
                 <div className="p-6 space-y-6">
                   {resumeData.projects.length === 0 && (
-                    <p className="text-gray-400 text-sm text-center py-8">
-                      No projects added yet.
+                    <p className="text-gray-400 text-center py-8">
+                      No projects added.
                     </p>
                   )}
                   {resumeData.projects.map((project) => (
                     <div
                       key={project.id}
-                      className="group relative border-b border-gray-100 last:border-0 pb-4 last:pb-0"
+                      className="group relative border-b pb-4"
                     >
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <h3 className="font-semibold text-gray-800">
-                            {project.title || "Project Title"}
-                          </h3>
-                          <div
-                            className="text-sm text-gray-600 mt-1"
-                            dangerouslySetInnerHTML={{
-                              __html:
-                                project.description.length > 120
-                                  ? project.description.substring(0, 120) +
-                                    "..."
-                                  : project.description ||
-                                    "Project description",
-                            }}
-                          />
+                      <div className="flex justify-between">
+                        <h3 className="font-semibold">
+                          {project.project_name}
+                        </h3>
+                        <span className="text-sm text-gray-500">
+                          {project.duration}
+                        </span>
+                      </div>
+                      <p
+                        className="text-gray-600 text-sm mt-1"
+                        dangerouslySetInnerHTML={{
+                          __html:
+                            project.description?.length > 100
+                              ? project.description.substring(0, 100) + "..."
+                              : project.description || "",
+                        }}
+                      />
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {project.tech_stack?.slice(0, 3).map((tech, i) => (
+                          <span
+                            key={i}
+                            className="text-xs px-2 py-0.5 bg-gray-100 rounded-full"
+                          >
+                            {tech}
+                          </span>
+                        ))}
+                        {project.tech_stack?.length > 3 && (
+                          <span className="text-xs text-gray-400">
+                            +{project.tech_stack.length - 3}
+                          </span>
+                        )}
+                      </div>
+                      <div className="absolute top-0 right-0 flex gap-1 opacity-0 group-hover:opacity-100">
+                        <button
+                          onClick={() => {
+                            setEditingItem({ type: "projects", data: project });
+                            setActiveSection("projectsEdit");
+                          }}
+                          className="p-1 text-gray-400 hover:text-blue-600"
+                        >
+                          <Edit2 size={14} />
+                        </button>
+                        <button
+                          onClick={() => deleteProject(project.id)}
+                          className="p-1 text-gray-400 hover:text-red-600"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Education Card */}
+              <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 flex justify-between items-center">
+                  <h2 className="font-semibold flex items-center gap-2">
+                    <GraduationCap size={18} /> Education
+                  </h2>
+                  <button
+                    onClick={() => setActiveSection("education")}
+                    className="text-blue-600 text-sm"
+                  >
+                    <Plus size={14} /> Add
+                  </button>
+                </div>
+                <div className="p-6 space-y-4">
+                  {resumeData.education.length === 0 && (
+                    <p className="text-gray-400 text-center py-8">
+                      No education added.
+                    </p>
+                  )}
+                  {resumeData.education.map((edu) => (
+                    <div key={edu.id} className="group relative border-b pb-3">
+                      <div className="flex justify-between">
+                        <div>
+                          <h3 className="font-semibold">{edu.degree_name}</h3>
+                          <p className="text-gray-600 text-sm">
+                            {edu.institution_name}
+                          </p>
                         </div>
-                        <div className="flex gap-1 opacity-0 group-hover:opacity-100">
+                        <span className="text-sm text-gray-500">
+                          {edu.start_year} - {edu.end_year}
+                        </span>
+                      </div>
+                      {edu.grade && (
+                        <p className="text-sm text-gray-500">
+                          Grade: {edu.grade}
+                        </p>
+                      )}
+                      <div className="absolute top-0 right-0 flex gap-1 opacity-0 group-hover:opacity-100">
+                        <button
+                          onClick={() => {
+                            setEditingItem({ type: "education", data: edu });
+                            setActiveSection("educationEdit");
+                          }}
+                          className="p-1 text-gray-400 hover:text-blue-600"
+                        >
+                          <Edit2 size={14} />
+                        </button>
+                        <button
+                          onClick={() => deleteEducation(edu.id)}
+                          className="p-1 text-gray-400 hover:text-red-600"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Achievements Card */}
+              {resumeData.achievements.length > 0 && (
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                  <div className="px-6 py-4 border-b flex justify-between">
+                    <h2 className="font-semibold flex items-center gap-2">
+                      <Trophy size={18} /> Achievements
+                    </h2>
+                    <button
+                      onClick={() => setActiveSection("achievements")}
+                      className="text-blue-600 text-sm"
+                    >
+                      <Plus size={14} /> Add
+                    </button>
+                  </div>
+                  <div className="p-6 space-y-3">
+                    {resumeData.achievements.map((ach) => (
+                      <div key={ach.id} className="group relative">
+                        <div className="flex justify-between">
+                          <h3 className="font-medium">{ach.title}</h3>
+                          <span className="text-sm text-gray-500">
+                            {ach.year}
+                          </span>
+                        </div>
+                        <div
+                          className="text-sm text-gray-600"
+                          dangerouslySetInnerHTML={{ __html: ach.description }}
+                        />
+                        <div className="absolute top-0 right-0 flex gap-1 opacity-0 group-hover:opacity-100">
                           <button
                             onClick={() => {
                               setEditingItem({
-                                type: "projects",
-                                data: project,
+                                type: "achievements",
+                                data: ach,
                               });
-                              setActiveSection("projectsEdit");
+                              setActiveSection("achievementsEdit");
                             }}
                             className="p-1 text-gray-400 hover:text-blue-600"
                           >
                             <Edit2 size={14} />
                           </button>
                           <button
-                            onClick={() => deleteProject(project.id)}
+                            onClick={() => deleteAchievement(ach.id)}
                             className="p-1 text-gray-400 hover:text-red-600"
                           >
                             <Trash2 size={14} />
                           </button>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* Volunteering Card */}
+              {resumeData.volunteering.length > 0 && (
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                  <div className="px-6 py-4 border-b flex justify-between">
+                    <h2 className="font-semibold flex items-center gap-2">
+                      <Heart size={18} /> Volunteering
+                    </h2>
+                    <button
+                      onClick={() => setActiveSection("volunteering")}
+                      className="text-blue-600 text-sm"
+                    >
+                      <Plus size={14} /> Add
+                    </button>
+                  </div>
+                  <div className="p-6 space-y-3">
+                    {resumeData.volunteering.map((vol) => (
+                      <div key={vol.id}>
+                        <div className="flex justify-between">
+                          <h3 className="font-medium">
+                            {vol.role} at {vol.organization}
+                          </h3>
+                          <span className="text-sm text-gray-500">
+                            {vol.duration}
+                          </span>
+                        </div>
+                        <div
+                          className="text-sm text-gray-600"
+                          dangerouslySetInnerHTML={{ __html: vol.description }}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Hobbies Card */}
+              {resumeData.hobbies.length > 0 && (
+                <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+                  <div className="px-6 py-4 border-b flex justify-between">
+                    <h2 className="font-semibold flex items-center gap-2">
+                      <Heart size={18} /> Hobbies
+                    </h2>
+                    <button
+                      onClick={() => setActiveSection("hobbies")}
+                      className="text-blue-600 text-sm"
+                    >
+                      <Plus size={14} /> Edit
+                    </button>
+                  </div>
+                  <div className="p-6 flex flex-wrap gap-2">
+                    {resumeData.hobbies.map((hobby, idx) => (
+                      <span
+                        key={idx}
+                        className="px-3 py-1 bg-gray-100 rounded-full text-sm"
+                      >
+                        {hobby}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -1994,12 +2679,12 @@ const BuildResume = () => {
       <Modal
         isOpen={activeSection === "personal"}
         onClose={() => setActiveSection(null)}
-        title="Edit Personal Information"
+        title="Edit Profile"
       >
         <PersonalInfoForm
-          data={resumeData.personal}
+          data={resumeData.user_profile}
           onSave={(data) => {
-            updateResumeData("personal", data);
+            updateResumeData("user_profile", data);
             setActiveSection(null);
           }}
           onClose={() => setActiveSection(null)}
@@ -2008,49 +2693,99 @@ const BuildResume = () => {
       <Modal
         isOpen={editingSummary}
         onClose={() => setEditingSummary(false)}
-        title="Edit Professional Summary"
+        title="Edit Summary"
       >
         <div className="space-y-4">
-          <div className="flex justify-end">
-            <button
-              onClick={() => {
-                setAiContext({
-                  content: resumeData.summary,
-                  sectionType: "summary",
-                  fieldName: "Professional Summary",
-                });
-                setShowAIAssistant(true);
-              }}
-              className="text-purple-600 hover:text-purple-700 text-sm flex items-center gap-1"
-            >
-              <Wand2 size={14} /> AI Enhance
-            </button>
-          </div>
           <RichTextEditor
             value={resumeData.summary}
             onChange={updateSummary}
-            placeholder="Write your professional summary here..."
+            placeholder="Write your professional summary..."
           />
           <div className="flex justify-end gap-3">
             <button
               onClick={() => setEditingSummary(false)}
-              className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+              className="px-4 py-2 text-gray-600 rounded-lg"
             >
               Cancel
             </button>
             <button
               onClick={() => setEditingSummary(false)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg"
             >
               Save
             </button>
           </div>
         </div>
       </Modal>
+
+      {/* Skills Modal */}
+      <Modal
+        isOpen={activeSection === "skills"}
+        onClose={() => setActiveSection(null)}
+        title="Edit Skills"
+      >
+        <div className="space-y-6">
+          {Object.keys(resumeData.skills).map((category) => (
+            <div key={category}>
+              <label className="block text-sm font-medium text-gray-700 mb-2 capitalize">
+                {category.replace(/_/g, " ")}
+              </label>
+              <div className="flex flex-wrap gap-2 mb-2">
+                {resumeData.skills[category].map((skill, idx) => (
+                  <span
+                    key={idx}
+                    className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-sm flex items-center gap-1"
+                  >
+                    {skill}
+                    <button
+                      onClick={() => removeSkillItem(category, idx)}
+                      className="hover:text-blue-900"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  placeholder={`Add ${category.replace(/_/g, " ")}`}
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg"
+                  onKeyPress={(e) => {
+                    if (e.key === "Enter") {
+                      addSkillItem(category, e.target.value);
+                      e.target.value = "";
+                    }
+                  }}
+                />
+                <button
+                  onClick={(e) => {
+                    const input = e.target.previousSibling;
+                    addSkillItem(category, input.value);
+                    input.value = "";
+                  }}
+                  className="px-4 py-2 bg-gray-100 rounded-lg"
+                >
+                  Add
+                </button>
+              </div>
+            </div>
+          ))}
+          <div className="flex justify-end">
+            <button
+              onClick={() => setActiveSection(null)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      </Modal>
+
       <Modal
         isOpen={activeSection === "experience"}
         onClose={() => setActiveSection(null)}
-        title="Add Work Experience"
+        title="Add Experience"
       >
         <ExperienceForm
           onSave={(data) => {
@@ -2063,7 +2798,7 @@ const BuildResume = () => {
       <Modal
         isOpen={activeSection === "experienceEdit"}
         onClose={() => setActiveSection(null)}
-        title="Edit Work Experience"
+        title="Edit Experience"
       >
         <ExperienceForm
           exp={editingItem?.data}
@@ -2078,6 +2813,7 @@ const BuildResume = () => {
           }}
         />
       </Modal>
+
       <Modal
         isOpen={activeSection === "projects"}
         onClose={() => setActiveSection(null)}
@@ -2109,37 +2845,7 @@ const BuildResume = () => {
           }}
         />
       </Modal>
-      <Modal
-        isOpen={activeSection === "skills"}
-        onClose={() => setActiveSection(null)}
-        title="Add Skill Category"
-      >
-        <SkillForm
-          onSave={(data) => {
-            addSkill(data);
-            setActiveSection(null);
-          }}
-          onCancel={() => setActiveSection(null)}
-        />
-      </Modal>
-      <Modal
-        isOpen={activeSection === "skillsEdit"}
-        onClose={() => setActiveSection(null)}
-        title="Edit Skill Category"
-      >
-        <SkillForm
-          skill={editingItem?.data}
-          onSave={(data) => {
-            updateSkill(editingItem.data.id, data);
-            setActiveSection(null);
-            setEditingItem(null);
-          }}
-          onCancel={() => {
-            setActiveSection(null);
-            setEditingItem(null);
-          }}
-        />
-      </Modal>
+
       <Modal
         isOpen={activeSection === "education"}
         onClose={() => setActiveSection(null)}
@@ -2171,6 +2877,203 @@ const BuildResume = () => {
           }}
         />
       </Modal>
+
+      <Modal
+        isOpen={activeSection === "certifications"}
+        onClose={() => setActiveSection(null)}
+        title="Add Certification"
+      >
+        <CertificationForm
+          onSave={(data) => {
+            addCertification(data);
+            setActiveSection(null);
+          }}
+          onCancel={() => setActiveSection(null)}
+        />
+      </Modal>
+      <Modal
+        isOpen={activeSection === "certificationsEdit"}
+        onClose={() => setActiveSection(null)}
+        title="Edit Certification"
+      >
+        <CertificationForm
+          cert={editingItem?.data}
+          onSave={(data) => {
+            updateCertification(editingItem.data.id, data);
+            setActiveSection(null);
+            setEditingItem(null);
+          }}
+          onCancel={() => {
+            setActiveSection(null);
+            setEditingItem(null);
+          }}
+        />
+      </Modal>
+
+      <Modal
+        isOpen={activeSection === "achievements"}
+        onClose={() => setActiveSection(null)}
+        title="Add Achievement"
+      >
+        <AchievementForm
+          onSave={(data) => {
+            addAchievement(data);
+            setActiveSection(null);
+          }}
+          onCancel={() => setActiveSection(null)}
+        />
+      </Modal>
+      <Modal
+        isOpen={activeSection === "achievementsEdit"}
+        onClose={() => setActiveSection(null)}
+        title="Edit Achievement"
+      >
+        <AchievementForm
+          ach={editingItem?.data}
+          onSave={(data) => {
+            updateAchievement(editingItem.data.id, data);
+            setActiveSection(null);
+            setEditingItem(null);
+          }}
+          onCancel={() => {
+            setActiveSection(null);
+            setEditingItem(null);
+          }}
+        />
+      </Modal>
+
+      <Modal
+        isOpen={activeSection === "languages"}
+        onClose={() => setActiveSection(null)}
+        title="Add Language"
+      >
+        <LanguageForm
+          onSave={(data) => {
+            addLanguage(data);
+            setActiveSection(null);
+          }}
+          onCancel={() => setActiveSection(null)}
+        />
+      </Modal>
+      <Modal
+        isOpen={activeSection === "languagesEdit"}
+        onClose={() => setActiveSection(null)}
+        title="Edit Language"
+      >
+        <LanguageForm
+          lang={editingItem?.data}
+          onSave={(data) => {
+            updateLanguage(editingItem.data.id, data);
+            setActiveSection(null);
+            setEditingItem(null);
+          }}
+          onCancel={() => {
+            setActiveSection(null);
+            setEditingItem(null);
+          }}
+        />
+      </Modal>
+
+      <Modal
+        isOpen={activeSection === "volunteering"}
+        onClose={() => setActiveSection(null)}
+        title="Add Volunteering"
+      >
+        <VolunteeringForm
+          onSave={(data) => {
+            addVolunteering(data);
+            setActiveSection(null);
+          }}
+          onCancel={() => setActiveSection(null)}
+        />
+      </Modal>
+      <Modal
+        isOpen={activeSection === "volunteeringEdit"}
+        onClose={() => setActiveSection(null)}
+        title="Edit Volunteering"
+      >
+        <VolunteeringForm
+          vol={editingItem?.data}
+          onSave={(data) => {
+            updateVolunteering(editingItem.data.id, data);
+            setActiveSection(null);
+            setEditingItem(null);
+          }}
+          onCancel={() => {
+            setActiveSection(null);
+            setEditingItem(null);
+          }}
+        />
+      </Modal>
+
+      <Modal
+        isOpen={activeSection === "hobbies"}
+        onClose={() => setActiveSection(null)}
+        title="Edit Hobbies"
+      >
+        <div className="space-y-4">
+          <div className="flex flex-wrap gap-2 mb-2">
+            {resumeData.hobbies.map((hobby, idx) => (
+              <span
+                key={idx}
+                className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-sm flex items-center gap-1"
+              >
+                {hobby}
+                <button
+                  onClick={() => {
+                    const newHobbies = [...resumeData.hobbies];
+                    newHobbies.splice(idx, 1);
+                    updateResumeData("hobbies", newHobbies);
+                  }}
+                  className="hover:text-blue-900"
+                >
+                  ×
+                </button>
+              </span>
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <input
+              type="text"
+              placeholder="Add hobby"
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg"
+              onKeyPress={(e) => {
+                if (e.key === "Enter") {
+                  updateResumeData("hobbies", [
+                    ...resumeData.hobbies,
+                    e.target.value,
+                  ]);
+                  e.target.value = "";
+                }
+              }}
+            />
+            <button
+              onClick={(e) => {
+                const input = document.querySelector("#hobbyInput");
+                if (input.value) {
+                  updateResumeData("hobbies", [
+                    ...resumeData.hobbies,
+                    input.value,
+                  ]);
+                  input.value = "";
+                }
+              }}
+              className="px-4 py-2 bg-gray-100 rounded-lg"
+            >
+              Add
+            </button>
+          </div>
+          <div className="flex justify-end">
+            <button
+              onClick={() => setActiveSection(null)}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      </Modal>
+
       <Modal
         isOpen={showCustomSection}
         onClose={() => {
