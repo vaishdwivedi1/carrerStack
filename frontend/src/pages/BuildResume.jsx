@@ -23,7 +23,7 @@ import {
   Wand2,
   X,
 } from "lucide-react";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 
 // Empty default resume data
 const defaultResumeData = {
@@ -44,26 +44,59 @@ const defaultResumeData = {
   customSections: [],
 };
 
-// Rich Text Editor Component
+// Fixed Rich Text Editor Component
 const RichTextEditor = ({ value, onChange, placeholder, className = "" }) => {
   const editorRef = useRef(null);
   const [showColorPicker, setShowColorPicker] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
+
+  // Initialize editor content
+  useEffect(() => {
+    if (editorRef.current && value !== editorRef.current.innerHTML) {
+      editorRef.current.innerHTML = value || "";
+    }
+  }, [value]);
 
   const execCommand = (command, value = null) => {
     document.execCommand(command, false, value);
     if (editorRef.current) {
       onChange(editorRef.current.innerHTML);
     }
+    editorRef.current.focus();
+  };
+
+  const handleInput = () => {
+    if (editorRef.current) {
+      onChange(editorRef.current.innerHTML);
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      document.execCommand("insertLineBreak");
+      handleInput();
+    }
+  };
+
+  const handlePaste = (e) => {
+    e.preventDefault();
+    const text = e.clipboardData.getData("text/plain");
+    document.execCommand("insertText", false, text);
+    handleInput();
   };
 
   return (
     <div
       className={`border border-gray-300 rounded-lg overflow-hidden ${className}`}
     >
-      <div className="bg-gray-50 border-b border-gray-300 p-2 flex flex-wrap gap-1">
+      <div className="bg-gray-50 border-b border-gray-300 p-2 flex flex-wrap gap-1 sticky top-0 z-10">
         <button
           type="button"
-          onClick={() => execCommand("bold")}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            execCommand("bold");
+          }}
           className="p-1.5 rounded hover:bg-gray-200"
           title="Bold"
         >
@@ -71,7 +104,10 @@ const RichTextEditor = ({ value, onChange, placeholder, className = "" }) => {
         </button>
         <button
           type="button"
-          onClick={() => execCommand("italic")}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            execCommand("italic");
+          }}
           className="p-1.5 rounded hover:bg-gray-200"
           title="Italic"
         >
@@ -79,7 +115,10 @@ const RichTextEditor = ({ value, onChange, placeholder, className = "" }) => {
         </button>
         <button
           type="button"
-          onClick={() => execCommand("underline")}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            execCommand("underline");
+          }}
           className="p-1.5 rounded hover:bg-gray-200"
           title="Underline"
         >
@@ -88,21 +127,30 @@ const RichTextEditor = ({ value, onChange, placeholder, className = "" }) => {
         <div className="w-px h-6 bg-gray-300 mx-1" />
         <button
           type="button"
-          onClick={() => execCommand("justifyLeft")}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            execCommand("justifyLeft");
+          }}
           className="p-1.5 rounded hover:bg-gray-200"
         >
           <AlignLeft size={16} />
         </button>
         <button
           type="button"
-          onClick={() => execCommand("justifyCenter")}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            execCommand("justifyCenter");
+          }}
           className="p-1.5 rounded hover:bg-gray-200"
         >
           <AlignCenter size={16} />
         </button>
         <button
           type="button"
-          onClick={() => execCommand("justifyRight")}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            execCommand("justifyRight");
+          }}
           className="p-1.5 rounded hover:bg-gray-200"
         >
           <AlignRight size={16} />
@@ -111,13 +159,16 @@ const RichTextEditor = ({ value, onChange, placeholder, className = "" }) => {
         <div className="relative">
           <button
             type="button"
-            onClick={() => setShowColorPicker(!showColorPicker)}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              setShowColorPicker(!showColorPicker);
+            }}
             className="p-1.5 rounded hover:bg-gray-200"
           >
             <Type size={16} />
           </button>
           {showColorPicker && (
-            <div className="absolute top-full left-0 mt-1 bg-white border rounded-lg shadow-lg p-2 z-10">
+            <div className="absolute top-full left-0 mt-1 bg-white border rounded-lg shadow-lg p-2 z-20">
               <div className="grid grid-cols-5 gap-1">
                 {[
                   "#000000",
@@ -133,7 +184,8 @@ const RichTextEditor = ({ value, onChange, placeholder, className = "" }) => {
                 ].map((color) => (
                   <button
                     key={color}
-                    onClick={() => {
+                    onMouseDown={(e) => {
+                      e.preventDefault();
                       execCommand("foreColor", color);
                       setShowColorPicker(false);
                     }}
@@ -147,17 +199,22 @@ const RichTextEditor = ({ value, onChange, placeholder, className = "" }) => {
         </div>
         <button
           type="button"
-          onClick={() => execCommand("backColor", "#FFFF00")}
+          onMouseDown={(e) => {
+            e.preventDefault();
+            execCommand("backColor", "#FFFF00");
+          }}
           className="p-1.5 rounded hover:bg-gray-200"
         >
           <Highlighter size={16} />
         </button>
         <button
           type="button"
-          onClick={() => {
+          onMouseDown={(e) => {
+            e.preventDefault();
             if (editorRef.current) {
               editorRef.current.innerHTML = "";
               onChange("");
+              editorRef.current.focus();
             }
           }}
           className="p-1.5 rounded hover:bg-gray-200"
@@ -168,18 +225,28 @@ const RichTextEditor = ({ value, onChange, placeholder, className = "" }) => {
       <div
         ref={editorRef}
         contentEditable
-        onInput={() =>
-          editorRef.current && onChange(editorRef.current.innerHTML)
-        }
-        dangerouslySetInnerHTML={{ __html: value }}
+        onInput={handleInput}
+        onKeyDown={handleKeyDown}
+        onPaste={handlePaste}
+        onFocus={() => setIsFocused(true)}
+        onBlur={() => setIsFocused(false)}
         className="p-3 min-h-[150px] focus:outline-none prose prose-sm max-w-none"
         style={{ fontFamily: "inherit" }}
+        data-placeholder={placeholder}
       />
+      {(!value || value === "<br>") && !isFocused && (
+        <div
+          className="absolute text-gray-400 pointer-events-none p-3"
+          style={{ marginTop: "-40px" }}
+        >
+          {placeholder}
+        </div>
+      )}
     </div>
   );
 };
 
-// AI Assistant Component - Enhanced for all sections
+// AI Assistant Component
 const AIAssistant = ({
   currentContent,
   onUpdate,
@@ -191,43 +258,28 @@ const AIAssistant = ({
   const [isLoading, setIsLoading] = useState(false);
   const [aiSuggestion, setAiSuggestion] = useState("");
 
-  const getAIPrompt = () => {
-    const prompts = {
-      personal:
-        "Generate a professional bio for a resume. Include name, title, and contact info style.",
-      summary:
-        "Write a compelling professional summary for a resume. Focus on key strengths and career goals.",
-      experience:
-        "Write a professional work experience description with action verbs and quantifiable achievements.",
-      project:
-        "Write a project description highlighting technical skills and impact.",
-      skill: "Suggest relevant professional skills categorized appropriately.",
-      education:
-        "Format education details professionally including degree, institution, and achievements.",
-      custom: "Write professional content for this section.",
-    };
-    return prompts[sectionType] || prompts.custom;
-  };
-
   const handleEnhance = async () => {
     setIsLoading(true);
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
     let enhanced = "";
-    const userPrompt = prompt || getAIPrompt();
 
     if (sectionType === "summary") {
-      enhanced = `✨ ${currentContent || "Results-driven professional with 5+ years of experience in [Industry]. Proven track record of delivering exceptional results through strategic thinking and innovative solutions. Skilled in [Key Skill 1], [Key Skill 2], and [Key Skill 3]. Committed to continuous improvement and excellence in all endeavors."}`;
-    } else if (sectionType === "experience") {
-      enhanced = `✨ ${currentContent || "• Led cross-functional teams to successfully deliver 15+ projects ahead of schedule\n• Increased operational efficiency by 30% through process optimization\n• Recognized as 'Top Performer' for 3 consecutive quarters"}`;
+      enhanced =
+        currentContent ||
+        "Results-driven professional with 5+ years of experience. Proven track record of delivering exceptional results through strategic thinking and innovative solutions.";
     } else if (sectionType === "project") {
       enhanced = `✨ ${currentContent || "Developed and launched a full-stack web application that served 10,000+ users. Implemented responsive design and optimized performance resulting in 40% faster load times. Technologies used: React, Node.js, MongoDB."}`;
     } else if (sectionType === "skill") {
       enhanced = `✨ ${currentContent || "• Technical: JavaScript, Python, React, Node.js, SQL\n• Soft Skills: Leadership, Communication, Problem-solving\n• Tools: Git, Docker, AWS, Figma"}`;
     } else if (sectionType === "education") {
       enhanced = `✨ ${currentContent || "Master of Business Administration (MBA) - [University Name], 2020-2022\n• GPA: 3.8/4.0\n• Relevant Coursework: Strategic Management, Marketing Analytics\n\nBachelor of Technology in Computer Science - [University Name], 2016-2020\n• Graduated with Honors\n• Led university coding club"}`;
+    } else if (sectionType === "experience") {
+      enhanced =
+        currentContent ||
+        "• Led cross-functional teams to successfully deliver 15+ projects ahead of schedule\n• Increased operational efficiency by 30% through process optimization\n• Recognized as 'Top Performer' for 3 consecutive quarters";
     } else {
-      enhanced = `✨ ${currentContent || "Your enhanced content will appear here. The AI can help you write more professionally, fix grammar, and add impact."}`;
+      enhanced = currentContent || "Your enhanced content will appear here.";
     }
 
     enhanced += `\n\n💡 Tip: Be specific about your achievements and use action verbs.`;
@@ -260,7 +312,6 @@ const AIAssistant = ({
             <X size={20} />
           </button>
         </div>
-
         <div className="p-6 space-y-4">
           <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
             <p className="text-sm text-purple-800">✨ AI can help you:</p>
@@ -271,19 +322,17 @@ const AIAssistant = ({
               <li>• Quantify your achievements</li>
             </ul>
           </div>
-
           <textarea
-            placeholder={`Describe what you want to improve or leave empty for automatic enhancement...\n\nExample: "Make this more achievement-focused" or "Add more technical details"`}
+            placeholder="Describe what you want to improve..."
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             rows={3}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
           />
-
           <button
             onClick={handleEnhance}
             disabled={isLoading}
-            className="w-full py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center gap-2"
+            className="w-full py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center justify-center gap-2"
           >
             {isLoading ? (
               <Loader2 className="animate-spin" size={20} />
@@ -292,20 +341,17 @@ const AIAssistant = ({
             )}
             {isLoading ? "Generating..." : "Generate AI Enhancement"}
           </button>
-
           {aiSuggestion && (
             <div className="mt-4">
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 AI Suggestion:
               </label>
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 max-h-[300px] overflow-y-auto">
-                <pre className="whitespace-pre-wrap text-sm text-gray-700 font-sans">
-                  {aiSuggestion}
-                </pre>
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 max-h-[300px] overflow-y-auto whitespace-pre-wrap text-sm text-gray-700">
+                {aiSuggestion}
               </div>
               <button
                 onClick={applySuggestion}
-                className="mt-3 w-full py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                className="mt-3 w-full py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
               >
                 Apply This Enhancement
               </button>
@@ -468,7 +514,7 @@ const QuickFillForm = ({ onGenerate, onClose }) => {
           />
           <button
             onClick={handleGenerate}
-            className="w-full py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center gap-2"
+            className="w-full py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center justify-center gap-2"
           >
             <Wand2 size={20} /> Generate Resume
           </button>
@@ -504,7 +550,6 @@ const CustomSectionForm = ({ section, onSave, onCancel }) => {
     section || { title: "", items: [{ id: Date.now(), content: "" }] },
   );
   const [showAIAssistant, setShowAIAssistant] = useState(false);
-  const [aiContent, setAiContent] = useState("");
 
   const addItem = () =>
     setFormData({
@@ -621,8 +666,6 @@ const BuildResume = () => {
   const [editingSummary, setEditingSummary] = useState(false);
   const [showCustomSection, setShowCustomSection] = useState(false);
   const [editingCustomSection, setEditingCustomSection] = useState(null);
-  const [editingPersonal, setEditingPersonal] = useState(false);
-  const [editingSkillItem, setEditingSkillItem] = useState(null);
 
   const updateResumeData = (section, data) =>
     setResumeData((prev) => ({ ...prev, [section]: data }));
@@ -994,7 +1037,7 @@ const BuildResume = () => {
         </div>
         <input
           type="text"
-          placeholder="Category (e.g., Programming Languages, Design Tools)"
+          placeholder="Category"
           value={formData.category}
           onChange={(e) =>
             setFormData({ ...formData, category: e.target.value })
@@ -1082,7 +1125,7 @@ const BuildResume = () => {
         </div>
         <input
           type="text"
-          placeholder="Degree / Program"
+          placeholder="Degree"
           value={formData.degree}
           onChange={(e) => setFormData({ ...formData, degree: e.target.value })}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg"
@@ -1098,14 +1141,14 @@ const BuildResume = () => {
         />
         <input
           type="text"
-          placeholder="Period (e.g., 2020 - 2024)"
+          placeholder="Period"
           value={formData.period}
           onChange={(e) => setFormData({ ...formData, period: e.target.value })}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg"
         />
         <input
           type="text"
-          placeholder="GPA / Percentage (Optional)"
+          placeholder="GPA"
           value={formData.gpa}
           onChange={(e) => setFormData({ ...formData, gpa: e.target.value })}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg"
@@ -1168,7 +1211,7 @@ const BuildResume = () => {
         />
         <input
           type="text"
-          placeholder="Professional Title"
+          placeholder="Title"
           value={formData.title}
           onChange={(e) => setFormData({ ...formData, title: e.target.value })}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg"
@@ -1279,7 +1322,6 @@ const BuildResume = () => {
               <a
                 href={resumeData.personal.linkedin}
                 target="_blank"
-                rel="noopener noreferrer"
                 className="hover:underline"
               >
                 LinkedIn
@@ -1292,7 +1334,6 @@ const BuildResume = () => {
               <a
                 href={resumeData.personal.portfolio}
                 target="_blank"
-                rel="noopener noreferrer"
                 className="hover:underline"
               >
                 Portfolio
