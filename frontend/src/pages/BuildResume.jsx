@@ -20,6 +20,7 @@ import {
   Plus,
   PlusCircle,
   RotateCcw,
+  Save,
   Trash2,
   Trophy,
   Type,
@@ -27,8 +28,13 @@ import {
   User as UserIcon,
   Wand2,
   X,
+  CheckCircle,
+  AlertCircle,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import axios from "axios";
+import { POSTMethod } from "../utils/server";
+import { API } from "../utils/APIS";
 
 // Empty default resume data matching new structure
 const defaultResumeData = {
@@ -64,7 +70,7 @@ const defaultResumeData = {
   custom_sections: [],
 };
 
-// Rich Text Editor Component
+// Rich Text Editor Component (same as before)
 const RichTextEditor = ({ value, onChange, placeholder, className = "" }) => {
   const editorRef = useRef(null);
   const [showColorPicker, setShowColorPicker] = useState(false);
@@ -261,7 +267,7 @@ const RichTextEditor = ({ value, onChange, placeholder, className = "" }) => {
   );
 };
 
-// AI Assistant Component
+// AI Assistant Component (same as before)
 const AIAssistant = ({
   currentContent,
   onUpdate,
@@ -427,7 +433,7 @@ const QuickFillForm = ({ onGenerate, onClose }) => {
           />
           <input
             type="text"
-            placeholder="Professional Title (e.g., Senior Software Engineer)"
+            placeholder="Professional Title"
             value={formData.professional_title}
             onChange={(e) =>
               setFormData({ ...formData, professional_title: e.target.value })
@@ -456,7 +462,7 @@ const QuickFillForm = ({ onGenerate, onClose }) => {
           </div>
           <input
             type="text"
-            placeholder="Location (e.g., San Francisco, CA)"
+            placeholder="Location"
             value={formData.location}
             onChange={(e) =>
               setFormData({ ...formData, location: e.target.value })
@@ -522,10 +528,150 @@ const BuildResume = () => {
   const [showCustomSection, setShowCustomSection] = useState(false);
   const [editingCustomSection, setEditingCustomSection] = useState(null);
 
+  // Save state
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState({
+    show: false,
+    success: false,
+    message: "",
+  });
+
+  // Get user ID from localStorage or context (adjust based on your auth system)
+  const getUserId = () => {
+    // Option 1: From localStorage
+    const user = localStorage.getItem("user");
+    if (user) {
+      try {
+        return JSON.parse(user)._id;
+      } catch (e) {
+        return null;
+      }
+    }
+  };
+
+  // Get auth token
+  const getAuthToken = () => {
+    return localStorage.getItem("token");
+  };
+
+  // Save resume to backend
+  const saveResume = async () => {
+    setIsSaving(true);
+    setSaveStatus({ show: false, success: false, message: "" });
+
+    try {
+      const token = getAuthToken();
+      const userId = getUserId();
+
+      // Validate required fields before saving
+      const requiredErrors = [];
+      if (!resumeData.user_profile.full_name)
+        requiredErrors.push("Full name is required");
+      if (!resumeData.user_profile.email)
+        requiredErrors.push("Email is required");
+      if (!resumeData.user_profile.phone)
+        requiredErrors.push("Phone number is required");
+      if (!resumeData.user_profile.professional_title)
+        requiredErrors.push("Professional title is required");
+
+      if (requiredErrors.length > 0) {
+        setSaveStatus({
+          show: true,
+          success: false,
+          message: `Missing required fields: ${requiredErrors.join(", ")}`,
+        });
+        setIsSaving(false);
+        return;
+      }
+
+      // Prepare payload
+      const payload = {
+        userId: userId,
+        user_profile: resumeData.user_profile,
+        summary: resumeData.summary,
+        skills: resumeData.skills,
+        experience: resumeData.experience,
+        projects: resumeData.projects,
+        education: resumeData.education,
+        certifications: resumeData.certifications,
+        achievements: resumeData.achievements,
+        languages: resumeData.languages,
+        volunteering: resumeData.volunteering,
+        hobbies: resumeData.hobbies,
+        custom_sections: resumeData.custom_sections,
+      };
+
+      // Make API call
+      const response = await POSTMethod(API.buildResume, payload);
+
+      if (response.data.success) {
+        setSaveStatus({
+          show: true,
+          success: true,
+          message: "Resume saved successfully!",
+        });
+
+        // Optionally store resume ID
+        if (response.data.data?._id) {
+          localStorage.setItem("resumeId", response.data.data._id);
+        }
+
+        // Auto hide success message after 3 seconds
+        setTimeout(() => {
+          setSaveStatus({ show: false, success: false, message: "" });
+        }, 3000);
+      } else {
+        throw new Error(response.data.message || "Failed to save resume");
+      }
+    } catch (error) {
+      console.error("Save error:", error);
+      setSaveStatus({
+        show: true,
+        success: false,
+        message:
+          error.response?.data?.message ||
+          error.message ||
+          "Failed to save resume. Please try again.",
+      });
+
+      // Auto hide error message after 5 seconds
+      setTimeout(() => {
+        setSaveStatus({ show: false, success: false, message: "" });
+      }, 5000);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  // Load existing resume (if editing)
+  const loadResume = async () => {
+    try {
+      const token = getAuthToken();
+      const response = await axios.get(
+        `${process.env.REACT_APP_API_URL || "http://localhost:5000"}/api/resume/my-resume`,
+        {
+          headers: { Authorization: token ? `Bearer ${token}` : "" },
+        },
+      );
+
+      if (response.data.success && response.data.data) {
+        setResumeData(response.data.data);
+      }
+    } catch (error) {
+      console.error("Load error:", error);
+      // No resume found, continue with empty form
+    }
+  };
+
+  // Load resume on component mount
+  useEffect(() => {
+    loadResume();
+  }, []);
+
+  // Rest of your CRUD functions (same as before)
   const updateResumeData = (section, data) =>
     setResumeData((prev) => ({ ...prev, [section]: data }));
 
-  // Experience CRUD
   const addExperience = (exp) =>
     setResumeData((prev) => ({
       ...prev,
@@ -544,7 +690,6 @@ const BuildResume = () => {
       experience: prev.experience.filter((exp) => exp.id !== id),
     }));
 
-  // Projects CRUD
   const addProject = (project) =>
     setResumeData((prev) => ({
       ...prev,
@@ -563,7 +708,6 @@ const BuildResume = () => {
       projects: prev.projects.filter((proj) => proj.id !== id),
     }));
 
-  // Education CRUD
   const addEducation = (edu) =>
     setResumeData((prev) => ({
       ...prev,
@@ -582,7 +726,6 @@ const BuildResume = () => {
       education: prev.education.filter((edu) => edu.id !== id),
     }));
 
-  // Certifications CRUD
   const addCertification = (cert) =>
     setResumeData((prev) => ({
       ...prev,
@@ -604,7 +747,6 @@ const BuildResume = () => {
       certifications: prev.certifications.filter((cert) => cert.id !== id),
     }));
 
-  // Achievements CRUD
   const addAchievement = (ach) =>
     setResumeData((prev) => ({
       ...prev,
@@ -626,7 +768,6 @@ const BuildResume = () => {
       achievements: prev.achievements.filter((ach) => ach.id !== id),
     }));
 
-  // Languages CRUD
   const addLanguage = (lang) =>
     setResumeData((prev) => ({
       ...prev,
@@ -645,7 +786,6 @@ const BuildResume = () => {
       languages: prev.languages.filter((lang) => lang.id !== id),
     }));
 
-  // Volunteering CRUD
   const addVolunteering = (vol) =>
     setResumeData((prev) => ({
       ...prev,
@@ -667,14 +807,11 @@ const BuildResume = () => {
       volunteering: prev.volunteering.filter((vol) => vol.id !== id),
     }));
 
-  // Skills update
-  const updateSkills = (category, values) => {
+  const updateSkills = (category, values) =>
     setResumeData((prev) => ({
       ...prev,
       skills: { ...prev.skills, [category]: values },
     }));
-  };
-
   const addSkillItem = (category, value) => {
     if (value.trim()) {
       setResumeData((prev) => ({
@@ -686,8 +823,7 @@ const BuildResume = () => {
       }));
     }
   };
-
-  const removeSkillItem = (category, index) => {
+  const removeSkillItem = (category, index) =>
     setResumeData((prev) => ({
       ...prev,
       skills: {
@@ -695,14 +831,12 @@ const BuildResume = () => {
         [category]: prev.skills[category].filter((_, i) => i !== index),
       },
     }));
-  };
 
   const updateSummary = (newSummary) => {
     updateResumeData("summary", newSummary);
     setEditingSummary(false);
   };
 
-  // Custom Sections
   const addCustomSection = (section) =>
     setResumeData((prev) => ({
       ...prev,
@@ -726,7 +860,7 @@ const BuildResume = () => {
       ),
     }));
 
-  // Form Components
+  // Form Components (same as before - shortened for brevity)
   const ExperienceForm = ({ exp, onSave, onCancel }) => {
     const [formData, setFormData] = useState(
       exp || {
@@ -740,7 +874,6 @@ const BuildResume = () => {
       },
     );
     const [newHighlight, setNewHighlight] = useState("");
-
     const addHighlight = () => {
       if (newHighlight.trim()) {
         setFormData({
@@ -755,7 +888,6 @@ const BuildResume = () => {
         ...formData,
         highlights: formData.highlights.filter((_, i) => i !== index),
       });
-
     return (
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
@@ -787,7 +919,7 @@ const BuildResume = () => {
           <div className="flex gap-2">
             <input
               type="text"
-              placeholder="Start Date (e.g., Jan 2022)"
+              placeholder="Start Date"
               value={formData.start_date}
               onChange={(e) =>
                 setFormData({ ...formData, start_date: e.target.value })
@@ -908,7 +1040,6 @@ const BuildResume = () => {
     );
     const [techInput, setTechInput] = useState("");
     const [newHighlight, setNewHighlight] = useState("");
-
     const addTech = () => {
       if (techInput.trim()) {
         setFormData({
@@ -937,7 +1068,6 @@ const BuildResume = () => {
         ...formData,
         highlights: formData.highlights.filter((_, i) => i !== index),
       });
-
     return (
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
@@ -1117,7 +1247,6 @@ const BuildResume = () => {
         ...formData,
         highlights: formData.highlights.filter((_, i) => i !== index),
       });
-
     return (
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
@@ -1242,7 +1371,7 @@ const BuildResume = () => {
           />
           <input
             type="text"
-            placeholder="Issuer (e.g., Google, AWS)"
+            placeholder="Issuer"
             value={formData.issuer}
             onChange={(e) =>
               setFormData({ ...formData, issuer: e.target.value })
@@ -1341,7 +1470,7 @@ const BuildResume = () => {
       <div className="space-y-4">
         <input
           type="text"
-          placeholder="Language (e.g., English, Spanish)"
+          placeholder="Language"
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg"
@@ -1402,7 +1531,7 @@ const BuildResume = () => {
         />
         <input
           type="text"
-          placeholder="Duration (e.g., 2022-2023)"
+          placeholder="Duration"
           value={formData.duration}
           onChange={(e) =>
             setFormData({ ...formData, duration: e.target.value })
@@ -1412,7 +1541,7 @@ const BuildResume = () => {
         <RichTextEditor
           value={formData.description}
           onChange={(value) => setFormData({ ...formData, description: value })}
-          placeholder="Description of your volunteer work"
+          placeholder="Description"
           className="w-full"
         />
         <div className="flex justify-end gap-3 pt-4">
@@ -1452,12 +1581,11 @@ const BuildResume = () => {
         ...formData,
         items: formData.items.filter((_, i) => i !== index),
       });
-
     return (
       <div className="space-y-4">
         <input
           type="text"
-          placeholder="Section Title (e.g., Hobbies, Interests)"
+          placeholder="Section Title"
           value={formData.title}
           onChange={(e) => setFormData({ ...formData, title: e.target.value })}
           className="w-full px-4 py-2 border border-gray-300 rounded-lg"
@@ -1728,8 +1856,6 @@ const BuildResume = () => {
             />
           </section>
         )}
-
-        {/* Skills Section */}
         {Object.keys(resumeData.skills).some(
           (cat) => resumeData.skills[cat].length > 0,
         ) && (
@@ -1766,8 +1892,6 @@ const BuildResume = () => {
             </div>
           </section>
         )}
-
-        {/* Experience */}
         {resumeData.experience.length > 0 && (
           <section>
             <h2
@@ -1810,8 +1934,6 @@ const BuildResume = () => {
             </div>
           </section>
         )}
-
-        {/* Projects */}
         {resumeData.projects.length > 0 && (
           <section>
             <h2
@@ -1864,8 +1986,6 @@ const BuildResume = () => {
             </div>
           </section>
         )}
-
-        {/* Education */}
         {resumeData.education.length > 0 && (
           <section>
             <h2
@@ -1904,8 +2024,6 @@ const BuildResume = () => {
             </div>
           </section>
         )}
-
-        {/* Certifications */}
         {resumeData.certifications.length > 0 && (
           <section>
             <h2
@@ -1932,8 +2050,6 @@ const BuildResume = () => {
             </div>
           </section>
         )}
-
-        {/* Achievements */}
         {resumeData.achievements.length > 0 && (
           <section>
             <h2
@@ -1961,8 +2077,6 @@ const BuildResume = () => {
             </div>
           </section>
         )}
-
-        {/* Languages */}
         {resumeData.languages.length > 0 && (
           <section>
             <h2
@@ -1986,8 +2100,6 @@ const BuildResume = () => {
             </div>
           </section>
         )}
-
-        {/* Volunteering */}
         {resumeData.volunteering.length > 0 && (
           <section>
             <h2
@@ -2019,8 +2131,6 @@ const BuildResume = () => {
             </div>
           </section>
         )}
-
-        {/* Hobbies */}
         {resumeData.hobbies.length > 0 && (
           <section>
             <h2
@@ -2044,8 +2154,6 @@ const BuildResume = () => {
             </div>
           </section>
         )}
-
-        {/* Custom Sections */}
         {resumeData.custom_sections.map((section) => (
           <section key={section.id}>
             <h2
@@ -2082,12 +2190,27 @@ const BuildResume = () => {
               </span>
             </div>
             <div className="flex items-center gap-3">
+              {/* Save Button */}
+              <button
+                onClick={saveResume}
+                disabled={isSaving}
+                className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isSaving ? (
+                  <Loader2 className="animate-spin" size={18} />
+                ) : (
+                  <Save size={18} />
+                )}
+                {isSaving ? "Saving..." : "Save Resume"}
+              </button>
+
               <button
                 onClick={() => setShowQuickFill(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
               >
                 <Wand2 size={18} /> AI Quick Build
               </button>
+
               <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-lg">
                 <span className="text-sm text-gray-600">Theme:</span>
                 <input
@@ -2097,6 +2220,7 @@ const BuildResume = () => {
                   className="w-6 h-6 rounded cursor-pointer border border-gray-300"
                 />
               </div>
+
               <button
                 onClick={() => setIsPreviewMode(!isPreviewMode)}
                 className="flex items-center gap-2 px-4 py-2 rounded-lg transition-colors"
@@ -2113,12 +2237,40 @@ const BuildResume = () => {
         </div>
       </div>
 
+      {/* Save Status Toast Notification */}
+      {saveStatus.show && (
+        <div
+          className={`fixed top-20 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg animate-slide-in ${
+            saveStatus.success
+              ? "bg-green-50 border border-green-200"
+              : "bg-red-50 border border-red-200"
+          }`}
+        >
+          {saveStatus.success ? (
+            <CheckCircle className="text-green-600" size={20} />
+          ) : (
+            <AlertCircle className="text-red-600" size={20} />
+          )}
+          <p className={saveStatus.success ? "text-green-800" : "text-red-800"}>
+            {saveStatus.message}
+          </p>
+          <button
+            onClick={() =>
+              setSaveStatus({ show: false, success: false, message: "" })
+            }
+            className="ml-2 text-gray-400 hover:text-gray-600"
+          >
+            <X size={16} />
+          </button>
+        </div>
+      )}
+
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {isPreviewMode ? (
           <ResumePreview />
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Column */}
+            {/* Left Column - Same as before */}
             <div className="lg:col-span-1 space-y-6">
               {/* Profile Card */}
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -2194,7 +2346,7 @@ const BuildResume = () => {
                 </div>
               </div>
 
-              {/* Skills Card - Categorized */}
+              {/* Skills Card */}
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
                 <div className="px-6 py-4 bg-gradient-to-r from-gray-50 to-white border-b border-gray-200 flex justify-between items-center">
                   <h2 className="font-semibold flex items-center gap-2">
@@ -2344,7 +2496,7 @@ const BuildResume = () => {
               </div>
             </div>
 
-            {/* Right Column */}
+            {/* Right Column - Same as before */}
             <div className="lg:col-span-2 space-y-6">
               {/* Experience Card */}
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -2675,7 +2827,7 @@ const BuildResume = () => {
         )}
       </div>
 
-      {/* Modals */}
+      {/* Modals - Same as before */}
       <Modal
         isOpen={activeSection === "personal"}
         onClose={() => setActiveSection(null)}
@@ -2717,8 +2869,6 @@ const BuildResume = () => {
           </div>
         </div>
       </Modal>
-
-      {/* Skills Modal */}
       <Modal
         isOpen={activeSection === "skills"}
         onClose={() => setActiveSection(null)}
@@ -2781,7 +2931,6 @@ const BuildResume = () => {
           </div>
         </div>
       </Modal>
-
       <Modal
         isOpen={activeSection === "experience"}
         onClose={() => setActiveSection(null)}
@@ -2813,7 +2962,6 @@ const BuildResume = () => {
           }}
         />
       </Modal>
-
       <Modal
         isOpen={activeSection === "projects"}
         onClose={() => setActiveSection(null)}
@@ -2845,7 +2993,6 @@ const BuildResume = () => {
           }}
         />
       </Modal>
-
       <Modal
         isOpen={activeSection === "education"}
         onClose={() => setActiveSection(null)}
@@ -2877,7 +3024,6 @@ const BuildResume = () => {
           }}
         />
       </Modal>
-
       <Modal
         isOpen={activeSection === "certifications"}
         onClose={() => setActiveSection(null)}
@@ -2909,7 +3055,6 @@ const BuildResume = () => {
           }}
         />
       </Modal>
-
       <Modal
         isOpen={activeSection === "achievements"}
         onClose={() => setActiveSection(null)}
@@ -2941,7 +3086,6 @@ const BuildResume = () => {
           }}
         />
       </Modal>
-
       <Modal
         isOpen={activeSection === "languages"}
         onClose={() => setActiveSection(null)}
@@ -2973,7 +3117,6 @@ const BuildResume = () => {
           }}
         />
       </Modal>
-
       <Modal
         isOpen={activeSection === "volunteering"}
         onClose={() => setActiveSection(null)}
@@ -3005,7 +3148,6 @@ const BuildResume = () => {
           }}
         />
       </Modal>
-
       <Modal
         isOpen={activeSection === "hobbies"}
         onClose={() => setActiveSection(null)}
@@ -3073,7 +3215,6 @@ const BuildResume = () => {
           </div>
         </div>
       </Modal>
-
       <Modal
         isOpen={showCustomSection}
         onClose={() => {
