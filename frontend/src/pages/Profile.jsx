@@ -272,161 +272,159 @@ const Profile = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="bg-white rounded-lg border border-gray-200 p-6">
-        {/* Basic Info */}
-        <div className="mb-8">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-lg font-semibold text-black flex items-center">
-              <User className="w-5 h-5 mr-2" />
-              Basic Information
-            </h2>
+    <div className="p-6">
+      {/* Basic Info */}
+      <div className="mb-8">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg font-semibold text-black flex items-center">
+            <User className="w-5 h-5 mr-2" />
+            Basic Information
+          </h2>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Username
+            </label>
+            <p className="text-gray-900 py-2 bg-gray-50 px-3 rounded-lg">
+              {user?.username}
+            </p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Username
-              </label>
-              <p className="text-gray-900 py-2 bg-gray-50 px-3 rounded-lg">
-                {user?.username}
-              </p>
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
-                <Mail className="w-4 h-4 mr-1" />
-                Email
-              </label>
-              <p className="text-gray-900 py-2 bg-gray-50 px-3 rounded-lg">
-                {user?.email}
-              </p>
-            </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center">
+              <Mail className="w-4 h-4 mr-1" />
+              Email
+            </label>
+            <p className="text-gray-900 py-2 bg-gray-50 px-3 rounded-lg">
+              {user?.email}
+            </p>
           </div>
         </div>
+      </div>
 
-        {/* Social Links - Icon Grid */}
-        <div className="mb-8">
-          <h2 className="text-lg font-semibold text-black mb-4 flex items-center">
-            <Link2 className="w-5 h-5 mr-2" />
-            Social Links
-          </h2>
+      {/* Social Links - Icon Grid */}
+      <div className="mb-8">
+        <h2 className="text-lg font-semibold text-black mb-4 flex items-center">
+          <Link2 className="w-5 h-5 mr-2" />
+          Social Links
+        </h2>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-            {socialLinksConfig.map((social) => {
-              const hasLink = formData.social_links[social.key];
-              const isEditing = editingSocial === social.key;
-              const displayValue = getDisplayValue(hasLink);
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+          {socialLinksConfig.map((social) => {
+            const hasLink = formData.social_links[social.key];
+            const isEditing = editingSocial === social.key;
+            const displayValue = getDisplayValue(hasLink);
 
-              return (
-                <div
-                  key={social.key}
-                  className={`group relative border rounded-lg p-3 transition-all ${
-                    hasLink
-                      ? `border-gray-200 ${social.bgColor}`
-                      : "border-dashed border-gray-300 bg-gray-50"
-                  }`}
-                >
-                  {!isEditing ? (
-                    <>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3 flex-1 min-w-0">
-                          <div className="flex-shrink-0">
-                            {renderIcon(social.icon, social.color)}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs text-gray-500">
-                              {social.label}
-                            </p>
-                            {hasLink ? (
-                              <a
-                                href={hasLink}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-sm text-blue-600 hover:underline truncate block"
-                                title={hasLink}
-                              >
-                                {displayValue}
-                              </a>
-                            ) : (
-                              <p className="text-sm text-gray-400">Not added</p>
-                            )}
-                          </div>
-                        </div>
-
-                        <button
-                          onClick={() => setEditingSocial(social.key)}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-100 rounded ml-2 flex-shrink-0"
-                          title={hasLink ? "Edit" : "Add"}
-                        >
-                          {hasLink ? (
-                            <Edit className="w-4 h-4 text-gray-500" />
-                          ) : (
-                            <Plus className="w-4 h-4 text-green-600" />
-                          )}
-                        </button>
-                      </div>
-                    </>
-                  ) : (
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2">
+            return (
+              <div
+                key={social.key}
+                className={`group relative border rounded-lg p-3 transition-all ${
+                  hasLink
+                    ? `border-gray-200 ${social.bgColor}`
+                    : "border-dashed border-gray-300 bg-gray-50"
+                }`}
+              >
+                {!isEditing ? (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3 flex-1 min-w-0">
                         <div className="flex-shrink-0">
                           {renderIcon(social.icon, social.color)}
                         </div>
-                        <input
-                          type="url"
-                          value={formData.social_links[social.key]}
-                          onChange={(e) => handleInputChange(e, social.key)}
-                          placeholder={social.placeholder}
-                          className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black"
-                          autoFocus
-                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs text-gray-500">
+                            {social.label}
+                          </p>
+                          {hasLink ? (
+                            <a
+                              href={hasLink}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-sm text-blue-600 hover:underline truncate block"
+                              title={hasLink}
+                            >
+                              {displayValue}
+                            </a>
+                          ) : (
+                            <p className="text-sm text-gray-400">Not added</p>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex gap-2 justify-end">
-                        <button
-                          onClick={handleCancelEdit}
-                          className="px-2 py-1 text-xs text-gray-600 hover:bg-gray-100 rounded"
-                        >
-                          Cancel
-                        </button>
-                        <button
-                          onClick={() => handleSocialSubmit(social.key)}
-                          className="px-2 py-1 text-xs text-white bg-black rounded hover:bg-gray-800 flex items-center gap-1"
-                        >
-                          <Save className="w-3 h-3" />
-                          Save
-                        </button>
-                      </div>
+
+                      <button
+                        onClick={() => setEditingSocial(social.key)}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-100 rounded ml-2 flex-shrink-0"
+                        title={hasLink ? "Edit" : "Add"}
+                      >
+                        {hasLink ? (
+                          <Edit className="w-4 h-4 text-gray-500" />
+                        ) : (
+                          <Plus className="w-4 h-4 text-green-600" />
+                        )}
+                      </button>
                     </div>
-                  )}
-                </div>
-              );
-            })}
+                  </>
+                ) : (
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2">
+                      <div className="flex-shrink-0">
+                        {renderIcon(social.icon, social.color)}
+                      </div>
+                      <input
+                        type="url"
+                        value={formData.social_links[social.key]}
+                        onChange={(e) => handleInputChange(e, social.key)}
+                        placeholder={social.placeholder}
+                        className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-black"
+                        autoFocus
+                      />
+                    </div>
+                    <div className="flex gap-2 justify-end">
+                      <button
+                        onClick={handleCancelEdit}
+                        className="px-2 py-1 text-xs text-gray-600 hover:bg-gray-100 rounded"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        onClick={() => handleSocialSubmit(social.key)}
+                        className="px-2 py-1 text-xs text-white bg-black rounded hover:bg-gray-800 flex items-center gap-1"
+                      >
+                        <Save className="w-3 h-3" />
+                        Save
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Stats Section */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Total Resumes</p>
+              <p className="text-2xl font-bold text-black">
+                {user?.resumes?.length || 0}
+              </p>
+            </div>
+            <FileText className="w-8 h-8 text-gray-400" />
           </div>
         </div>
 
-        {/* Stats Section */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Total Resumes</p>
-                <p className="text-2xl font-bold text-black">
-                  {user?.resumes?.length || 0}
-                </p>
-              </div>
-              <FileText className="w-8 h-8 text-gray-400" />
+        <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-500">Total Posts</p>
+              <p className="text-2xl font-bold text-black">
+                {user?.posts?.length || 0}
+              </p>
             </div>
-          </div>
-
-          <div className="bg-gray-50 rounded-lg p-4 border border-gray-200">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-500">Total Posts</p>
-                <p className="text-2xl font-bold text-black">
-                  {user?.posts?.length || 0}
-                </p>
-              </div>
-              <PenTool className="w-8 h-8 text-gray-400" />
-            </div>
+            <PenTool className="w-8 h-8 text-gray-400" />
           </div>
         </div>
       </div>
