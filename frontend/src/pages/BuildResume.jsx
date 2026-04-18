@@ -2,32 +2,21 @@ import {
   AlignCenter,
   AlignLeft,
   AlignRight,
-  Award,
   Bold,
-  BookOpen,
   Briefcase,
-  Camera,
-  Code,
   Code2,
-  Coffee,
   Edit2,
   Eye,
   FileText,
   FolderGit2,
-  Globe,
   GraduationCap,
-  Heart,
   Highlighter,
   Italic,
-  Languages,
   Loader2,
-  Music,
   Plus,
   PlusCircle,
   RotateCcw,
-  Star,
   Trash2,
-  Trophy,
   Type,
   Underline,
   User as UserIcon,
@@ -52,7 +41,7 @@ const defaultResumeData = {
   projects: [],
   skills: [],
   education: [],
-  customSections: [], // Array for custom sections like Hobbies, Certifications, etc.
+  customSections: [],
 };
 
 // Rich Text Editor Component
@@ -184,27 +173,74 @@ const RichTextEditor = ({ value, onChange, placeholder, className = "" }) => {
         }
         dangerouslySetInnerHTML={{ __html: value }}
         className="p-3 min-h-[150px] focus:outline-none prose prose-sm max-w-none"
-        data-placeholder={placeholder}
         style={{ fontFamily: "inherit" }}
       />
     </div>
   );
 };
 
-// AI Assistant Component
-const AIAssistant = ({ currentContent, onUpdate, onClose }) => {
+// AI Assistant Component - Enhanced for all sections
+const AIAssistant = ({
+  currentContent,
+  onUpdate,
+  onClose,
+  sectionType,
+  fieldName,
+}) => {
   const [prompt, setPrompt] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [aiSuggestion, setAiSuggestion] = useState("");
+
+  const getAIPrompt = () => {
+    const prompts = {
+      personal:
+        "Generate a professional bio for a resume. Include name, title, and contact info style.",
+      summary:
+        "Write a compelling professional summary for a resume. Focus on key strengths and career goals.",
+      experience:
+        "Write a professional work experience description with action verbs and quantifiable achievements.",
+      project:
+        "Write a project description highlighting technical skills and impact.",
+      skill: "Suggest relevant professional skills categorized appropriately.",
+      education:
+        "Format education details professionally including degree, institution, and achievements.",
+      custom: "Write professional content for this section.",
+    };
+    return prompts[sectionType] || prompts.custom;
+  };
 
   const handleEnhance = async () => {
     setIsLoading(true);
     await new Promise((resolve) => setTimeout(resolve, 1500));
 
-    const enhanced = `✨ ${currentContent || "Your enhanced content will appear here. The AI can help you write more professionally, fix grammar, and add impact."}\n\n💡 Tip: Be specific about your achievements and use action verbs.`;
+    let enhanced = "";
+    const userPrompt = prompt || getAIPrompt();
 
-    onUpdate(enhanced);
+    if (sectionType === "summary") {
+      enhanced = `✨ ${currentContent || "Results-driven professional with 5+ years of experience in [Industry]. Proven track record of delivering exceptional results through strategic thinking and innovative solutions. Skilled in [Key Skill 1], [Key Skill 2], and [Key Skill 3]. Committed to continuous improvement and excellence in all endeavors."}`;
+    } else if (sectionType === "experience") {
+      enhanced = `✨ ${currentContent || "• Led cross-functional teams to successfully deliver 15+ projects ahead of schedule\n• Increased operational efficiency by 30% through process optimization\n• Recognized as 'Top Performer' for 3 consecutive quarters"}`;
+    } else if (sectionType === "project") {
+      enhanced = `✨ ${currentContent || "Developed and launched a full-stack web application that served 10,000+ users. Implemented responsive design and optimized performance resulting in 40% faster load times. Technologies used: React, Node.js, MongoDB."}`;
+    } else if (sectionType === "skill") {
+      enhanced = `✨ ${currentContent || "• Technical: JavaScript, Python, React, Node.js, SQL\n• Soft Skills: Leadership, Communication, Problem-solving\n• Tools: Git, Docker, AWS, Figma"}`;
+    } else if (sectionType === "education") {
+      enhanced = `✨ ${currentContent || "Master of Business Administration (MBA) - [University Name], 2020-2022\n• GPA: 3.8/4.0\n• Relevant Coursework: Strategic Management, Marketing Analytics\n\nBachelor of Technology in Computer Science - [University Name], 2016-2020\n• Graduated with Honors\n• Led university coding club"}`;
+    } else {
+      enhanced = `✨ ${currentContent || "Your enhanced content will appear here. The AI can help you write more professionally, fix grammar, and add impact."}`;
+    }
+
+    enhanced += `\n\n💡 Tip: Be specific about your achievements and use action verbs.`;
+
+    setAiSuggestion(enhanced);
     setIsLoading(false);
-    onClose();
+  };
+
+  const applySuggestion = () => {
+    if (aiSuggestion) {
+      onUpdate(aiSuggestion);
+      onClose();
+    }
   };
 
   return (
@@ -214,7 +250,7 @@ const AIAssistant = ({ currentContent, onUpdate, onClose }) => {
           <div className="flex items-center gap-2">
             <Wand2 className="text-purple-600" size={24} />
             <h3 className="text-xl font-semibold text-gray-800">
-              AI Resume Assistant
+              AI Assistant - {fieldName || sectionType}
             </h3>
           </div>
           <button
@@ -237,10 +273,10 @@ const AIAssistant = ({ currentContent, onUpdate, onClose }) => {
           </div>
 
           <textarea
-            placeholder="Describe what you want to improve or just click enhance for automatic improvements..."
+            placeholder={`Describe what you want to improve or leave empty for automatic enhancement...\n\nExample: "Make this more achievement-focused" or "Add more technical details"`}
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
-            rows={4}
+            rows={3}
             className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
           />
 
@@ -254,8 +290,27 @@ const AIAssistant = ({ currentContent, onUpdate, onClose }) => {
             ) : (
               <Wand2 size={20} />
             )}
-            {isLoading ? "Enhancing..." : "Enhance with AI"}
+            {isLoading ? "Generating..." : "Generate AI Enhancement"}
           </button>
+
+          {aiSuggestion && (
+            <div className="mt-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                AI Suggestion:
+              </label>
+              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 max-h-[300px] overflow-y-auto">
+                <pre className="whitespace-pre-wrap text-sm text-gray-700 font-sans">
+                  {aiSuggestion}
+                </pre>
+              </div>
+              <button
+                onClick={applySuggestion}
+                className="mt-3 w-full py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+              >
+                Apply This Enhancement
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>
@@ -385,7 +440,7 @@ const QuickFillForm = ({ onGenerate, onClose }) => {
             className="w-full px-4 py-2 border border-gray-300 rounded-lg"
           />
           <textarea
-            placeholder="Work Experience (one per line)&#10;e.g., Software Engineer at Google&#10;Intern at Microsoft"
+            placeholder="Work Experience (one per line)&#10;e.g., Software Engineer at Google"
             value={formData.experience}
             onChange={(e) =>
               setFormData({ ...formData, experience: e.target.value })
@@ -403,7 +458,7 @@ const QuickFillForm = ({ onGenerate, onClose }) => {
             className="w-full px-4 py-2 border border-gray-300 rounded-lg"
           />
           <textarea
-            placeholder="Education (one per line)&#10;e.g., B.Tech at IIT Delhi&#10;MBA at IIM Ahmedabad"
+            placeholder="Education (one per line)&#10;e.g., B.Tech at IIT Delhi"
             value={formData.education}
             onChange={(e) =>
               setFormData({ ...formData, education: e.target.value })
@@ -446,38 +501,40 @@ const Modal = ({ isOpen, onClose, title, children }) => {
 // Custom Section Form
 const CustomSectionForm = ({ section, onSave, onCancel }) => {
   const [formData, setFormData] = useState(
-    section || {
-      title: "",
-      icon: "",
-      items: [{ id: Date.now(), content: "" }],
-    },
+    section || { title: "", items: [{ id: Date.now(), content: "" }] },
   );
+  const [showAIAssistant, setShowAIAssistant] = useState(false);
+  const [aiContent, setAiContent] = useState("");
 
-  const addItem = () => {
+  const addItem = () =>
     setFormData({
       ...formData,
       items: [...formData.items, { id: Date.now(), content: "" }],
     });
-  };
-
-  const updateItem = (id, content) => {
+  const updateItem = (id, content) =>
     setFormData({
       ...formData,
       items: formData.items.map((item) =>
         item.id === id ? { ...item, content } : item,
       ),
     });
-  };
-
-  const removeItem = (id) => {
+  const removeItem = (id) =>
     setFormData({
       ...formData,
       items: formData.items.filter((item) => item.id !== id),
     });
-  };
 
   return (
     <div className="space-y-4">
+      <div className="flex justify-end">
+        <button
+          type="button"
+          onClick={() => setShowAIAssistant(true)}
+          className="text-sm text-purple-600 hover:text-purple-700 flex items-center gap-1"
+        >
+          <Wand2 size={14} /> AI Enhance Section
+        </button>
+      </div>
       <input
         type="text"
         placeholder="Section Title (e.g., Hobbies, Certifications, Awards)"
@@ -485,7 +542,6 @@ const CustomSectionForm = ({ section, onSave, onCancel }) => {
         onChange={(e) => setFormData({ ...formData, title: e.target.value })}
         className="w-full px-4 py-2 border border-gray-300 rounded-lg"
       />
-
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
           Items
@@ -515,7 +571,6 @@ const CustomSectionForm = ({ section, onSave, onCancel }) => {
           <Plus size={16} /> Add Item
         </button>
       </div>
-
       <div className="flex justify-end gap-3 pt-4">
         <button
           onClick={onCancel}
@@ -530,6 +585,21 @@ const CustomSectionForm = ({ section, onSave, onCancel }) => {
           Save Section
         </button>
       </div>
+      {showAIAssistant && (
+        <AIAssistant
+          currentContent={JSON.stringify(formData)}
+          onUpdate={(newContent) => {
+            try {
+              const parsed = JSON.parse(newContent);
+              setFormData(parsed);
+            } catch (e) {}
+            setShowAIAssistant(false);
+          }}
+          onClose={() => setShowAIAssistant(false)}
+          sectionType="custom"
+          fieldName={formData.title || "Custom Section"}
+        />
+      )}
     </div>
   );
 };
@@ -542,153 +612,133 @@ const BuildResume = () => {
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [accentColor, setAccentColor] = useState("#2563EB");
   const [showAIAssistant, setShowAIAssistant] = useState(false);
-  const [aiContext, setAiContext] = useState({ content: "" });
+  const [aiContext, setAiContext] = useState({
+    content: "",
+    sectionType: "",
+    fieldName: "",
+  });
   const [showQuickFill, setShowQuickFill] = useState(false);
   const [editingSummary, setEditingSummary] = useState(false);
   const [showCustomSection, setShowCustomSection] = useState(false);
   const [editingCustomSection, setEditingCustomSection] = useState(null);
+  const [editingPersonal, setEditingPersonal] = useState(false);
+  const [editingSkillItem, setEditingSkillItem] = useState(null);
 
-  const updateResumeData = (section, data) => {
+  const updateResumeData = (section, data) =>
     setResumeData((prev) => ({ ...prev, [section]: data }));
-  };
 
-  const addExperience = (exp) => {
-    const newExp = { ...exp, id: Date.now().toString() };
+  const addExperience = (exp) =>
     setResumeData((prev) => ({
       ...prev,
-      experience: [...prev.experience, newExp],
+      experience: [...prev.experience, { ...exp, id: Date.now().toString() }],
     }));
-  };
-
-  const updateExperience = (id, updatedExp) => {
+  const updateExperience = (id, updatedExp) =>
     setResumeData((prev) => ({
       ...prev,
       experience: prev.experience.map((exp) =>
         exp.id === id ? { ...exp, ...updatedExp } : exp,
       ),
     }));
-  };
-
-  const deleteExperience = (id) => {
+  const deleteExperience = (id) =>
     setResumeData((prev) => ({
       ...prev,
       experience: prev.experience.filter((exp) => exp.id !== id),
     }));
-  };
 
-  const addProject = (project) => {
-    const newProject = { ...project, id: Date.now().toString() };
+  const addProject = (project) =>
     setResumeData((prev) => ({
       ...prev,
-      projects: [...prev.projects, newProject],
+      projects: [...prev.projects, { ...project, id: Date.now().toString() }],
     }));
-  };
-
-  const updateProject = (id, updatedProject) => {
+  const updateProject = (id, updatedProject) =>
     setResumeData((prev) => ({
       ...prev,
       projects: prev.projects.map((proj) =>
         proj.id === id ? { ...proj, ...updatedProject } : proj,
       ),
     }));
-  };
-
-  const deleteProject = (id) => {
+  const deleteProject = (id) =>
     setResumeData((prev) => ({
       ...prev,
       projects: prev.projects.filter((proj) => proj.id !== id),
     }));
-  };
 
-  const addSkill = (skill) => {
-    const newSkill = { ...skill, id: Date.now().toString() };
-    setResumeData((prev) => ({ ...prev, skills: [...prev.skills, newSkill] }));
-  };
-
-  const updateSkill = (id, updatedSkill) => {
+  const addSkill = (skill) =>
+    setResumeData((prev) => ({
+      ...prev,
+      skills: [...prev.skills, { ...skill, id: Date.now().toString() }],
+    }));
+  const updateSkill = (id, updatedSkill) =>
     setResumeData((prev) => ({
       ...prev,
       skills: prev.skills.map((skill) =>
         skill.id === id ? { ...skill, ...updatedSkill } : skill,
       ),
     }));
-  };
-
-  const deleteSkill = (id) => {
+  const deleteSkill = (id) =>
     setResumeData((prev) => ({
       ...prev,
       skills: prev.skills.filter((skill) => skill.id !== id),
     }));
-  };
 
-  const addEducation = (edu) => {
-    const newEdu = { ...edu, id: Date.now().toString() };
+  const addEducation = (edu) =>
     setResumeData((prev) => ({
       ...prev,
-      education: [...prev.education, newEdu],
+      education: [...prev.education, { ...edu, id: Date.now().toString() }],
     }));
-  };
-
-  const updateEducation = (id, updatedEdu) => {
+  const updateEducation = (id, updatedEdu) =>
     setResumeData((prev) => ({
       ...prev,
       education: prev.education.map((edu) =>
         edu.id === id ? { ...edu, ...updatedEdu } : edu,
       ),
     }));
-  };
-
-  const deleteEducation = (id) => {
+  const deleteEducation = (id) =>
     setResumeData((prev) => ({
       ...prev,
       education: prev.education.filter((edu) => edu.id !== id),
     }));
-  };
 
   const updateSummary = (newSummary) => {
     updateResumeData("summary", newSummary);
     setEditingSummary(false);
   };
 
-  // Custom Section Handlers
-  const addCustomSection = (section) => {
-    const newSection = { ...section, id: Date.now().toString() };
+  const addCustomSection = (section) =>
     setResumeData((prev) => ({
       ...prev,
-      customSections: [...prev.customSections, newSection],
+      customSections: [
+        ...prev.customSections,
+        { ...section, id: Date.now().toString() },
+      ],
     }));
-  };
-
-  const updateCustomSection = (id, updatedSection) => {
+  const updateCustomSection = (id, updatedSection) =>
     setResumeData((prev) => ({
       ...prev,
       customSections: prev.customSections.map((section) =>
         section.id === id ? { ...section, ...updatedSection } : section,
       ),
     }));
-  };
-
-  const deleteCustomSection = (id) => {
+  const deleteCustomSection = (id) =>
     setResumeData((prev) => ({
       ...prev,
       customSections: prev.customSections.filter(
         (section) => section.id !== id,
       ),
     }));
-  };
 
-  // Form Components
+  // Experience Form
   const ExperienceForm = ({ exp, onSave, onCancel }) => {
     const [formData, setFormData] = useState(
       exp || { title: "", company: "", period: "", highlights: [""] },
     );
+    const [showAI, setShowAI] = useState(false);
 
     const handleHighlightChange = (index, value) => {
       const newHighlights = [...formData.highlights];
       newHighlights[index] = value;
       setFormData({ ...formData, highlights: newHighlights });
     };
-
     const addHighlight = () =>
       setFormData({ ...formData, highlights: [...formData.highlights, ""] });
     const removeHighlight = (index) =>
@@ -702,10 +752,7 @@ const BuildResume = () => {
         <div className="flex justify-end">
           <button
             type="button"
-            onClick={() => {
-              setAiContext({ content: JSON.stringify(formData) });
-              setShowAIAssistant(true);
-            }}
+            onClick={() => setShowAI(true)}
             className="text-sm text-purple-600 hover:text-purple-700 flex items-center gap-1"
           >
             <Wand2 size={14} /> AI Enhance
@@ -777,15 +824,32 @@ const BuildResume = () => {
             Save
           </button>
         </div>
+        {showAI && (
+          <AIAssistant
+            currentContent={JSON.stringify(formData)}
+            onUpdate={(newContent) => {
+              try {
+                const parsed = JSON.parse(newContent);
+                setFormData(parsed);
+              } catch (e) {}
+              setShowAI(false);
+            }}
+            onClose={() => setShowAI(false)}
+            sectionType="experience"
+            fieldName="Work Experience"
+          />
+        )}
       </div>
     );
   };
 
+  // Project Form
   const ProjectForm = ({ project, onSave, onCancel }) => {
     const [formData, setFormData] = useState(
       project || { title: "", description: "", technologies: [] },
     );
     const [techInput, setTechInput] = useState("");
+    const [showAI, setShowAI] = useState(false);
 
     const addTechnology = () => {
       if (techInput.trim()) {
@@ -807,10 +871,7 @@ const BuildResume = () => {
         <div className="flex justify-end">
           <button
             type="button"
-            onClick={() => {
-              setAiContext({ content: JSON.stringify(formData) });
-              setShowAIAssistant(true);
-            }}
+            onClick={() => setShowAI(true)}
             className="text-sm text-purple-600 hover:text-purple-700 flex items-center gap-1"
           >
             <Wand2 size={14} /> AI Enhance
@@ -881,14 +942,32 @@ const BuildResume = () => {
             Save
           </button>
         </div>
+        {showAI && (
+          <AIAssistant
+            currentContent={JSON.stringify(formData)}
+            onUpdate={(newContent) => {
+              try {
+                const parsed = JSON.parse(newContent);
+                setFormData(parsed);
+              } catch (e) {}
+              setShowAI(false);
+            }}
+            onClose={() => setShowAI(false)}
+            sectionType="project"
+            fieldName="Project"
+          />
+        )}
       </div>
     );
   };
 
+  // Skill Form
   const SkillForm = ({ skill, onSave, onCancel }) => {
     const [formData, setFormData] = useState(
       skill || { category: "", items: [""] },
     );
+    const [showAI, setShowAI] = useState(false);
+
     const handleItemChange = (index, value) => {
       const newItems = [...formData.items];
       newItems[index] = value;
@@ -904,6 +983,15 @@ const BuildResume = () => {
 
     return (
       <div className="space-y-4">
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={() => setShowAI(true)}
+            className="text-sm text-purple-600 hover:text-purple-700 flex items-center gap-1"
+          >
+            <Wand2 size={14} /> AI Enhance
+          </button>
+        </div>
         <input
           type="text"
           placeholder="Category (e.g., Programming Languages, Design Tools)"
@@ -955,16 +1043,43 @@ const BuildResume = () => {
             Save
           </button>
         </div>
+        {showAI && (
+          <AIAssistant
+            currentContent={JSON.stringify(formData)}
+            onUpdate={(newContent) => {
+              try {
+                const parsed = JSON.parse(newContent);
+                setFormData(parsed);
+              } catch (e) {}
+              setShowAI(false);
+            }}
+            onClose={() => setShowAI(false)}
+            sectionType="skill"
+            fieldName="Skills"
+          />
+        )}
       </div>
     );
   };
 
+  // Education Form
   const EducationForm = ({ edu, onSave, onCancel }) => {
     const [formData, setFormData] = useState(
       edu || { degree: "", institution: "", period: "", gpa: "" },
     );
+    const [showAI, setShowAI] = useState(false);
+
     return (
       <div className="space-y-4">
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={() => setShowAI(true)}
+            className="text-sm text-purple-600 hover:text-purple-700 flex items-center gap-1"
+          >
+            <Wand2 size={14} /> AI Enhance
+          </button>
+        </div>
         <input
           type="text"
           placeholder="Degree / Program"
@@ -1009,14 +1124,41 @@ const BuildResume = () => {
             Save
           </button>
         </div>
+        {showAI && (
+          <AIAssistant
+            currentContent={JSON.stringify(formData)}
+            onUpdate={(newContent) => {
+              try {
+                const parsed = JSON.parse(newContent);
+                setFormData(parsed);
+              } catch (e) {}
+              setShowAI(false);
+            }}
+            onClose={() => setShowAI(false)}
+            sectionType="education"
+            fieldName="Education"
+          />
+        )}
       </div>
     );
   };
 
+  // Personal Info Form
   const PersonalInfoForm = ({ data, onSave, onClose }) => {
     const [formData, setFormData] = useState(data);
+    const [showAI, setShowAI] = useState(false);
+
     return (
       <div className="space-y-4">
+        <div className="flex justify-end">
+          <button
+            type="button"
+            onClick={() => setShowAI(true)}
+            className="text-sm text-purple-600 hover:text-purple-700 flex items-center gap-1"
+          >
+            <Wand2 size={14} /> AI Enhance
+          </button>
+        </div>
         <input
           type="text"
           placeholder="Full Name"
@@ -1077,259 +1219,245 @@ const BuildResume = () => {
             Save
           </button>
         </div>
+        {showAI && (
+          <AIAssistant
+            currentContent={JSON.stringify(formData)}
+            onUpdate={(newContent) => {
+              try {
+                const parsed = JSON.parse(newContent);
+                setFormData(parsed);
+              } catch (e) {}
+              setShowAI(false);
+            }}
+            onClose={() => setShowAI(false)}
+            sectionType="personal"
+            fieldName="Personal Information"
+          />
+        )}
       </div>
     );
   };
 
-  const ResumePreview = () => {
-    return (
+  const ResumePreview = () => (
+    <div
+      className="bg-white shadow-2xl rounded-xl overflow-hidden"
+      style={{ fontFamily: "'Charter', 'Times New Roman', serif" }}
+    >
       <div
-        className="bg-white shadow-2xl rounded-xl overflow-hidden"
-        style={{ fontFamily: "'Charter', 'Times New Roman', serif" }}
+        className="text-center py-8 px-6 border-b"
+        style={{ borderBottomColor: `${accentColor}20` }}
       >
-        <div
-          className="text-center py-8 px-6 border-b"
-          style={{ borderBottomColor: `${accentColor}20` }}
-        >
-          <h1
-            className="text-4xl font-bold mb-2"
-            style={{ color: accentColor }}
-          >
-            {resumeData.personal.name || "Your Name"}
-          </h1>
-          <p className="text-gray-600 mb-3">
-            {resumeData.personal.title || "Professional Title"}
-          </p>
-          <div className="flex flex-wrap justify-center gap-3 text-sm text-gray-600">
-            {resumeData.personal.email && (
-              <>
-                <a
-                  href={`mailto:${resumeData.personal.email}`}
-                  className="hover:underline"
-                >
-                  {resumeData.personal.email}
-                </a>
-                <span>|</span>
-              </>
-            )}
-            {resumeData.personal.phone && (
+        <h1 className="text-4xl font-bold mb-2" style={{ color: accentColor }}>
+          {resumeData.personal.name || "Your Name"}
+        </h1>
+        <p className="text-gray-600 mb-3">
+          {resumeData.personal.title || "Professional Title"}
+        </p>
+        <div className="flex flex-wrap justify-center gap-3 text-sm text-gray-600">
+          {resumeData.personal.email && (
+            <>
               <a
-                href={`tel:${resumeData.personal.phone}`}
+                href={`mailto:${resumeData.personal.email}`}
                 className="hover:underline"
               >
-                {resumeData.personal.phone}
+                {resumeData.personal.email}
               </a>
-            )}
-            {resumeData.personal.linkedin && (
-              <>
-                <span>|</span>
-                <a
-                  href={resumeData.personal.linkedin}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:underline"
-                >
-                  LinkedIn
-                </a>
-              </>
-            )}
-            {resumeData.personal.portfolio && (
-              <>
-                <span>|</span>
-                <a
-                  href={resumeData.personal.portfolio}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:underline"
-                >
-                  Portfolio
-                </a>
-              </>
-            )}
-          </div>
-        </div>
-        <div className="p-6 space-y-6">
-          {resumeData.summary && (
-            <section>
-              <h2
-                className="text-xl font-bold mb-3 pb-1 border-b"
-                style={{
-                  color: accentColor,
-                  borderBottomColor: `${accentColor}40`,
-                }}
-              >
-                Professional Summary
-              </h2>
-              <div
-                className="text-gray-700 leading-relaxed"
-                dangerouslySetInnerHTML={{ __html: resumeData.summary }}
-              />
-            </section>
+              <span>|</span>
+            </>
           )}
-          {resumeData.experience.length > 0 && (
-            <section>
-              <h2
-                className="text-xl font-bold mb-3 pb-1 border-b"
-                style={{
-                  color: accentColor,
-                  borderBottomColor: `${accentColor}40`,
-                }}
-              >
-                Experience
-              </h2>
-              <div className="space-y-4">
-                {resumeData.experience.map((exp) => (
-                  <div key={exp.id}>
-                    <div className="flex justify-between items-baseline flex-wrap gap-2">
-                      <h3 className="text-lg font-semibold text-gray-800">
-                        {exp.title}, {exp.company}
-                      </h3>
-                      <span className="text-sm text-gray-500">
-                        {exp.period}
-                      </span>
-                    </div>
-                    <ul className="mt-2 space-y-1 list-disc list-inside text-gray-600">
-                      {exp.highlights.map((highlight, idx) => (
-                        <li
-                          key={idx}
-                          className="text-sm"
-                          dangerouslySetInnerHTML={{ __html: highlight }}
-                        />
-                      ))}
-                    </ul>
-                  </div>
-                ))}
-              </div>
-            </section>
+          {resumeData.personal.phone && (
+            <a
+              href={`tel:${resumeData.personal.phone}`}
+              className="hover:underline"
+            >
+              {resumeData.personal.phone}
+            </a>
           )}
-          {resumeData.projects.length > 0 && (
-            <section>
-              <h2
-                className="text-xl font-bold mb-3 pb-1 border-b"
-                style={{
-                  color: accentColor,
-                  borderBottomColor: `${accentColor}40`,
-                }}
+          {resumeData.personal.linkedin && (
+            <>
+              <span>|</span>
+              <a
+                href={resumeData.personal.linkedin}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:underline"
               >
-                Projects
-              </h2>
-              <div className="space-y-4">
-                {resumeData.projects.map((project) => (
-                  <div key={project.id}>
-                    <h3 className="text-lg font-semibold text-gray-800">
-                      {project.title}
-                    </h3>
-                    <div
-                      className="text-gray-600 text-sm mt-1"
-                      dangerouslySetInnerHTML={{ __html: project.description }}
-                    />
-                    {project.technologies &&
-                      project.technologies.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mt-2">
-                          {project.technologies.map((tech, idx) => (
-                            <span
-                              key={idx}
-                              className="text-xs px-2 py-1 rounded-full"
-                              style={{
-                                backgroundColor: `${accentColor}10`,
-                                color: accentColor,
-                              }}
-                            >
-                              {tech}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                  </div>
-                ))}
-              </div>
-            </section>
+                LinkedIn
+              </a>
+            </>
           )}
-          {resumeData.skills.length > 0 && (
-            <section>
-              <h2
-                className="text-xl font-bold mb-3 pb-1 border-b"
-                style={{
-                  color: accentColor,
-                  borderBottomColor: `${accentColor}40`,
-                }}
+          {resumeData.personal.portfolio && (
+            <>
+              <span>|</span>
+              <a
+                href={resumeData.personal.portfolio}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="hover:underline"
               >
-                Skills
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {resumeData.skills.map((skillCategory) => (
-                  <div key={skillCategory.id}>
-                    <h3 className="font-semibold text-gray-800 mb-1">
-                      {skillCategory.category}
-                    </h3>
-                    <p className="text-gray-600 text-sm">
-                      {skillCategory.items.join(", ")}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </section>
+                Portfolio
+              </a>
+            </>
           )}
-          {resumeData.education.length > 0 && (
-            <section>
-              <h2
-                className="text-xl font-bold mb-3 pb-1 border-b"
-                style={{
-                  color: accentColor,
-                  borderBottomColor: `${accentColor}40`,
-                }}
-              >
-                Education
-              </h2>
-              <div className="space-y-3">
-                {resumeData.education.map((edu) => (
-                  <div key={edu.id}>
-                    <div className="flex justify-between items-baseline flex-wrap gap-2">
-                      <h3 className="text-lg font-semibold text-gray-800">
-                        {edu.degree}
-                      </h3>
-                      <span className="text-sm text-gray-500">
-                        {edu.period}
-                      </span>
-                    </div>
-                    <p className="text-gray-600">{edu.institution}</p>
-                    {edu.gpa && (
-                      <p className="text-sm text-gray-500">GPA: {edu.gpa}</p>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-          {/* Custom Sections */}
-          {resumeData.customSections.map((section) => {
-            return (
-              <section key={section.id}>
-                <h2
-                  className="text-xl font-bold mb-3 pb-1 border-b flex items-center gap-2"
-                  style={{
-                    color: accentColor,
-                    borderBottomColor: `${accentColor}40`,
-                  }}
-                >
-                  {section.title}
-                </h2>
-                <div className="space-y-2">
-                  {section.items.map((item) => (
-                    <div
-                      key={item.id}
-                      className="text-gray-700"
-                      dangerouslySetInnerHTML={{ __html: item.content }}
-                    />
-                  ))}
-                </div>
-              </section>
-            );
-          })}
         </div>
       </div>
-    );
-  };
+      <div className="p-6 space-y-6">
+        {resumeData.summary && (
+          <section>
+            <h2
+              className="text-xl font-bold mb-3 pb-1 border-b"
+              style={{
+                color: accentColor,
+                borderBottomColor: `${accentColor}40`,
+              }}
+            >
+              Professional Summary
+            </h2>
+            <div
+              className="text-gray-700 leading-relaxed"
+              dangerouslySetInnerHTML={{ __html: resumeData.summary }}
+            />
+          </section>
+        )}
+        {resumeData.experience.length > 0 && (
+          <section>
+            <h2
+              className="text-xl font-bold mb-3 pb-1 border-b"
+              style={{
+                color: accentColor,
+                borderBottomColor: `${accentColor}40`,
+              }}
+            >
+              Experience
+            </h2>
+            <div className="space-y-4">
+              {resumeData.experience.map((exp) => (
+                <div key={exp.id}>
+                  <div className="flex justify-between items-baseline flex-wrap gap-2">
+                    <h3 className="text-lg font-semibold text-gray-800">
+                      {exp.title}, {exp.company}
+                    </h3>
+                    <span className="text-sm text-gray-500">{exp.period}</span>
+                  </div>
+                  <ul className="mt-2 space-y-1 list-disc list-inside text-gray-600">
+                    {exp.highlights.map((highlight, idx) => (
+                      <li
+                        key={idx}
+                        className="text-sm"
+                        dangerouslySetInnerHTML={{ __html: highlight }}
+                      />
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+        {resumeData.projects.length > 0 && (
+          <section>
+            <h2
+              className="text-xl font-bold mb-3 pb-1 border-b"
+              style={{
+                color: accentColor,
+                borderBottomColor: `${accentColor}40`,
+              }}
+            >
+              Projects
+            </h2>
+            <div className="space-y-4">
+              {resumeData.projects.map((project) => (
+                <div key={project.id}>
+                  <h3 className="text-lg font-semibold text-gray-800">
+                    {project.title}
+                  </h3>
+                  <div
+                    className="text-gray-600 text-sm mt-1"
+                    dangerouslySetInnerHTML={{ __html: project.description }}
+                  />
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+        {resumeData.skills.length > 0 && (
+          <section>
+            <h2
+              className="text-xl font-bold mb-3 pb-1 border-b"
+              style={{
+                color: accentColor,
+                borderBottomColor: `${accentColor}40`,
+              }}
+            >
+              Skills
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {resumeData.skills.map((skillCategory) => (
+                <div key={skillCategory.id}>
+                  <h3 className="font-semibold text-gray-800 mb-1">
+                    {skillCategory.category}
+                  </h3>
+                  <p className="text-gray-600 text-sm">
+                    {skillCategory.items.join(", ")}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+        {resumeData.education.length > 0 && (
+          <section>
+            <h2
+              className="text-xl font-bold mb-3 pb-1 border-b"
+              style={{
+                color: accentColor,
+                borderBottomColor: `${accentColor}40`,
+              }}
+            >
+              Education
+            </h2>
+            <div className="space-y-3">
+              {resumeData.education.map((edu) => (
+                <div key={edu.id}>
+                  <div className="flex justify-between items-baseline flex-wrap gap-2">
+                    <h3 className="text-lg font-semibold text-gray-800">
+                      {edu.degree}
+                    </h3>
+                    <span className="text-sm text-gray-500">{edu.period}</span>
+                  </div>
+                  <p className="text-gray-600">{edu.institution}</p>
+                  {edu.gpa && (
+                    <p className="text-sm text-gray-500">GPA: {edu.gpa}</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+        {resumeData.customSections.map((section) => (
+          <section key={section.id}>
+            <h2
+              className="text-xl font-bold mb-3 pb-1 border-b"
+              style={{
+                color: accentColor,
+                borderBottomColor: `${accentColor}40`,
+              }}
+            >
+              {section.title}
+            </h2>
+            <div className="space-y-2">
+              {section.items.map((item) => (
+                <div
+                  key={item.id}
+                  className="text-gray-700"
+                  dangerouslySetInnerHTML={{ __html: item.content }}
+                />
+              ))}
+            </div>
+          </section>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <div className="min-h-screen">
@@ -1350,7 +1478,7 @@ const BuildResume = () => {
                 <Wand2 size={18} /> AI Quick Build
               </button>
               <div className="flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-lg">
-                <span className="text-sm text-gray-600">Resume Theme:</span>
+                <span className="text-sm text-gray-600">Theme:</span>
                 <input
                   type="color"
                   value={accentColor}
@@ -1386,12 +1514,27 @@ const BuildResume = () => {
                   <h2 className="font-semibold text-gray-800 flex items-center gap-2">
                     <UserIcon size={18} /> Personal Information
                   </h2>
-                  <button
-                    onClick={() => setActiveSection("personal")}
-                    className="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1"
-                  >
-                    <Edit2 size={14} /> Edit
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => {
+                        setAiContext({
+                          content: JSON.stringify(resumeData.personal),
+                          sectionType: "personal",
+                          fieldName: "Personal Information",
+                        });
+                        setShowAIAssistant(true);
+                      }}
+                      className="text-purple-600 hover:text-purple-700 text-sm flex items-center gap-1"
+                    >
+                      <Wand2 size={14} /> AI
+                    </button>
+                    <button
+                      onClick={() => setActiveSection("personal")}
+                      className="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1"
+                    >
+                      <Edit2 size={14} /> Edit
+                    </button>
+                  </div>
                 </div>
                 <div className="p-6 space-y-3">
                   <div>
@@ -1441,7 +1584,11 @@ const BuildResume = () => {
                   <div className="flex gap-2">
                     <button
                       onClick={() => {
-                        setAiContext({ content: resumeData.summary });
+                        setAiContext({
+                          content: resumeData.summary,
+                          sectionType: "summary",
+                          fieldName: "Professional Summary",
+                        });
                         setShowAIAssistant(true);
                       }}
                       className="text-purple-600 hover:text-purple-700 text-sm flex items-center gap-1"
@@ -1462,7 +1609,7 @@ const BuildResume = () => {
                     dangerouslySetInnerHTML={{
                       __html:
                         resumeData.summary ||
-                        "<em class='text-gray-400'>No summary added yet. Click Edit to add one.</em>",
+                        "<em class='text-gray-400'>No summary added yet.</em>",
                     }}
                   />
                 </div>
@@ -1484,7 +1631,7 @@ const BuildResume = () => {
                 <div className="p-6 space-y-4">
                   {resumeData.skills.length === 0 && (
                     <p className="text-gray-400 text-sm text-center py-4">
-                      No skills added yet. Click Add to add your skills.
+                      No skills added yet.
                     </p>
                   )}
                   {resumeData.skills.map((skillCategory) => (
@@ -1538,7 +1685,7 @@ const BuildResume = () => {
                 <div className="p-6 space-y-4">
                   {resumeData.education.length === 0 && (
                     <p className="text-gray-400 text-sm text-center py-4">
-                      No education added yet. Click Add to add your education.
+                      No education added yet.
                     </p>
                   )}
                   {resumeData.education.map((edu) => (
@@ -1602,47 +1749,44 @@ const BuildResume = () => {
                 <div className="p-6 space-y-4">
                   {resumeData.customSections.length === 0 && (
                     <p className="text-gray-400 text-sm text-center py-4">
-                      No custom sections added. Click Add to create sections
-                      like Hobbies, Certifications, Awards, etc.
+                      No custom sections added.
                     </p>
                   )}
-                  {resumeData.customSections.map((section) => {
-                    return (
-                      <div
-                        key={section.id}
-                        className="group relative border-b border-gray-100 last:border-0 pb-3 last:pb-0"
-                      >
-                        <div className="flex justify-between items-start">
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-medium text-gray-800">
-                              {section.title}
-                            </h3>
-                          </div>
-                          <div className="flex gap-1 opacity-0 group-hover:opacity-100">
-                            <button
-                              onClick={() => {
-                                setEditingCustomSection(section);
-                                setShowCustomSection(true);
-                              }}
-                              className="p-1 text-gray-400 hover:text-blue-600"
-                            >
-                              <Edit2 size={14} />
-                            </button>
-                            <button
-                              onClick={() => deleteCustomSection(section.id)}
-                              className="p-1 text-gray-400 hover:text-red-600"
-                            >
-                              <Trash2 size={14} />
-                            </button>
-                          </div>
+                  {resumeData.customSections.map((section) => (
+                    <div
+                      key={section.id}
+                      className="group relative border-b border-gray-100 last:border-0 pb-3 last:pb-0"
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-medium text-gray-800">
+                            {section.title}
+                          </h3>
+                          <p className="text-sm text-gray-600 mt-1">
+                            {section.items.length} item
+                            {section.items.length !== 1 ? "s" : ""}
+                          </p>
                         </div>
-                        <p className="text-sm text-gray-600 mt-1">
-                          {section.items.length} item
-                          {section.items.length !== 1 ? "s" : ""}
-                        </p>
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100">
+                          <button
+                            onClick={() => {
+                              setEditingCustomSection(section);
+                              setShowCustomSection(true);
+                            }}
+                            className="p-1 text-gray-400 hover:text-blue-600"
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                          <button
+                            onClick={() => deleteCustomSection(section.id)}
+                            className="p-1 text-gray-400 hover:text-red-600"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
                       </div>
-                    );
-                  })}
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
@@ -1664,8 +1808,7 @@ const BuildResume = () => {
                 <div className="p-6 space-y-6">
                   {resumeData.experience.length === 0 && (
                     <p className="text-gray-400 text-sm text-center py-8">
-                      No work experience added yet. Click Add Experience to
-                      start.
+                      No work experience added yet.
                     </p>
                   )}
                   {resumeData.experience.map((exp) => (
@@ -1751,7 +1894,7 @@ const BuildResume = () => {
                 <div className="p-6 space-y-6">
                   {resumeData.projects.length === 0 && (
                     <p className="text-gray-400 text-sm text-center py-8">
-                      No projects added yet. Click Add Project to start.
+                      No projects added yet.
                     </p>
                   )}
                   {resumeData.projects.map((project) => (
@@ -1821,7 +1964,6 @@ const BuildResume = () => {
           onClose={() => setActiveSection(null)}
         />
       </Modal>
-
       <Modal
         isOpen={editingSummary}
         onClose={() => setEditingSummary(false)}
@@ -1831,7 +1973,11 @@ const BuildResume = () => {
           <div className="flex justify-end">
             <button
               onClick={() => {
-                setAiContext({ content: resumeData.summary });
+                setAiContext({
+                  content: resumeData.summary,
+                  sectionType: "summary",
+                  fieldName: "Professional Summary",
+                });
                 setShowAIAssistant(true);
               }}
               className="text-purple-600 hover:text-purple-700 text-sm flex items-center gap-1"
@@ -1860,7 +2006,6 @@ const BuildResume = () => {
           </div>
         </div>
       </Modal>
-
       <Modal
         isOpen={activeSection === "experience"}
         onClose={() => setActiveSection(null)}
@@ -1874,7 +2019,6 @@ const BuildResume = () => {
           onCancel={() => setActiveSection(null)}
         />
       </Modal>
-
       <Modal
         isOpen={activeSection === "experienceEdit"}
         onClose={() => setActiveSection(null)}
@@ -1893,7 +2037,6 @@ const BuildResume = () => {
           }}
         />
       </Modal>
-
       <Modal
         isOpen={activeSection === "projects"}
         onClose={() => setActiveSection(null)}
@@ -1907,7 +2050,6 @@ const BuildResume = () => {
           onCancel={() => setActiveSection(null)}
         />
       </Modal>
-
       <Modal
         isOpen={activeSection === "projectsEdit"}
         onClose={() => setActiveSection(null)}
@@ -1926,7 +2068,6 @@ const BuildResume = () => {
           }}
         />
       </Modal>
-
       <Modal
         isOpen={activeSection === "skills"}
         onClose={() => setActiveSection(null)}
@@ -1940,7 +2081,6 @@ const BuildResume = () => {
           onCancel={() => setActiveSection(null)}
         />
       </Modal>
-
       <Modal
         isOpen={activeSection === "skillsEdit"}
         onClose={() => setActiveSection(null)}
@@ -1959,7 +2099,6 @@ const BuildResume = () => {
           }}
         />
       </Modal>
-
       <Modal
         isOpen={activeSection === "education"}
         onClose={() => setActiveSection(null)}
@@ -1973,7 +2112,6 @@ const BuildResume = () => {
           onCancel={() => setActiveSection(null)}
         />
       </Modal>
-
       <Modal
         isOpen={activeSection === "educationEdit"}
         onClose={() => setActiveSection(null)}
@@ -1992,8 +2130,6 @@ const BuildResume = () => {
           }}
         />
       </Modal>
-
-      {/* Custom Section Modal */}
       <Modal
         isOpen={showCustomSection}
         onClose={() => {
@@ -2029,9 +2165,9 @@ const BuildResume = () => {
             if (editingSummary) updateSummary(newContent);
             setShowAIAssistant(false);
           }}
-          onClose={() => {
-            setShowAIAssistant(false);
-          }}
+          onClose={() => setShowAIAssistant(false)}
+          sectionType={aiContext.sectionType}
+          fieldName={aiContext.fieldName}
         />
       )}
       {showQuickFill && (
@@ -2046,18 +2182,5 @@ const BuildResume = () => {
     </div>
   );
 };
-
-const User = (props) => (
-  <svg
-    {...props}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-  >
-    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-    <circle cx="12" cy="7" r="4" />
-  </svg>
-);
 
 export default BuildResume;
