@@ -421,7 +421,7 @@ const BuildResume = () => {
                       onClick={() => setActiveSection("personal")}
                       className="text-blue-600 hover:text-blue-700 text-sm flex items-center gap-1"
                     >
-                      <Edit2 size={14} /> Edit
+                      <Edit2 size={14} />
                     </button>
                   </div>
                 </div>
@@ -469,9 +469,9 @@ const BuildResume = () => {
                         setTempSummary(resumeData.summary);
                         setEditingSummary(true);
                       }}
-                      className="text-blue-600 text-sm"
+                      className="text-blue-600 text-sm whitespace-nowrap"
                     >
-                      <Edit2 size={14} /> Edit
+                      <Edit2 size={14} />
                     </button>
                   </div>
                 </div>
@@ -497,7 +497,7 @@ const BuildResume = () => {
                     onClick={() => setActiveSection("skills")}
                     className="text-blue-600 text-sm"
                   >
-                    <Plus size={14} /> Add
+                    <Plus size={14} />
                   </button>
                 </div>
                 <div className="p-6">
@@ -541,7 +541,7 @@ const BuildResume = () => {
                       onClick={() => setActiveSection("languages")}
                       className="text-blue-600 text-sm"
                     >
-                      <Plus size={14} /> Add
+                      <Plus size={14} />
                     </button>
                   </div>
                   <div className="p-6 space-y-2">
@@ -568,7 +568,7 @@ const BuildResume = () => {
                       onClick={() => setActiveSection("certifications")}
                       className="text-blue-600 text-sm"
                     >
-                      <Plus size={14} /> Add
+                      <Plus size={14} />
                     </button>
                   </div>
                   <div className="p-6 space-y-3">
@@ -594,7 +594,7 @@ const BuildResume = () => {
                     onClick={() => setShowCustomSection(true)}
                     className="text-blue-600 text-sm"
                   >
-                    <Plus size={14} /> Add
+                    <Plus size={14} />
                   </button>
                 </div>
                 <div className="p-6 space-y-4">
@@ -649,7 +649,7 @@ const BuildResume = () => {
                     onClick={() => setActiveSection("experience")}
                     className="text-blue-600 text-sm"
                   >
-                    <Plus size={14} /> Add
+                    <Plus size={14} />
                   </button>
                 </div>
                 <div className="p-6 space-y-6">
@@ -722,7 +722,7 @@ const BuildResume = () => {
                     onClick={() => setActiveSection("projects")}
                     className="text-blue-600 text-sm"
                   >
-                    <Plus size={14} /> Add
+                    <Plus size={14} />
                   </button>
                 </div>
                 <div className="p-6 space-y-6">
@@ -800,7 +800,7 @@ const BuildResume = () => {
                     onClick={() => setActiveSection("education")}
                     className="text-blue-600 text-sm"
                   >
-                    <Plus size={14} /> Add
+                    <Plus size={14} />
                   </button>
                 </div>
                 <div className="p-6 space-y-4">
@@ -860,7 +860,7 @@ const BuildResume = () => {
                       onClick={() => setActiveSection("achievements")}
                       className="text-blue-600 text-sm"
                     >
-                      <Plus size={14} /> Add
+                      <Plus size={14} />
                     </button>
                   </div>
                   <div className="p-6 space-y-3">
@@ -913,7 +913,7 @@ const BuildResume = () => {
                       onClick={() => setActiveSection("volunteering")}
                       className="text-blue-600 text-sm"
                     >
-                      <Plus size={14} /> Add
+                      <Plus size={14} />
                     </button>
                   </div>
                   <div className="p-6 space-y-3">
@@ -948,7 +948,7 @@ const BuildResume = () => {
                       onClick={() => setActiveSection("hobbies")}
                       className="text-blue-600 text-sm"
                     >
-                      <Plus size={14} /> Edit
+                      <Plus size={14} />
                     </button>
                   </div>
                   <div className="p-6 flex flex-wrap gap-2">
