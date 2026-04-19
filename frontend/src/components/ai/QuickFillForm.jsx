@@ -1,3 +1,6 @@
+import { Wand2, X } from "lucide-react";
+import { useState } from "react";
+
 // Quick Fill Form
 const QuickFillForm = ({ onGenerate, onClose }) => {
   const [formData, setFormData] = useState({

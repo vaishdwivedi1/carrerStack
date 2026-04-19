@@ -1,9 +1,15 @@
-import { Plus, Trash2 } from "lucide-react";
+import { Plus, Trash2, Edit2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import RichTextEditor from "../ai/RichTextEditor";
 
 // Form Components
-const ExperienceForm = ({ exp, onSave, onCancel }) => {
+const ExperienceForm = ({
+  exp,
+  onSave,
+  onCancel,
+  isEditing = false,
+  onDelete = null,
+}) => {
   const [formData, setFormData] = useState(
     exp || {
       company_name: "",
@@ -55,7 +61,7 @@ const ExperienceForm = ({ exp, onSave, onCancel }) => {
         />
         <div className="flex gap-2">
           <input
-            type="text"
+            type="month"
             placeholder="Start Date"
             value={formData.start_date}
             onChange={(e) =>
@@ -65,7 +71,7 @@ const ExperienceForm = ({ exp, onSave, onCancel }) => {
           />
           {!formData.isPresentCompany ? (
             <input
-              type="text"
+              type="month"
               placeholder="End Date"
               value={formData.end_date}
               onChange={(e) =>
@@ -143,6 +149,75 @@ const ExperienceForm = ({ exp, onSave, onCancel }) => {
         >
           Save
         </button>
+      </div>
+    </div>
+  );
+};
+
+// Card View Component for displaying experience with hover actions
+export const ExperienceCard = ({ experience, onEdit, onDelete }) => {
+  return (
+    <div className="group relative border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow bg-white">
+      {/* Action Buttons - Positioned at top right corner */}
+      <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+        <button
+          onClick={() => onEdit(experience)}
+          className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+          title="Edit"
+        >
+          <Edit2 size={16} />
+        </button>
+        <button
+          onClick={() => onDelete(experience.id)}
+          className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+          title="Delete"
+        >
+          <Trash2 size={16} />
+        </button>
+      </div>
+
+      {/* Content */}
+      <div className="pr-16">
+        {/* Title and Company */}
+        <div className="mb-2">
+          <h3 className="text-lg font-semibold text-gray-800">
+            {experience.role || "Untitled Role"}
+          </h3>
+          <p className="text-gray-600 font-medium">
+            {experience.company_name || "Company Name"}
+          </p>
+        </div>
+
+        {/* Location and Date */}
+        <div className="flex flex-wrap justify-between items-start gap-2 mb-3 text-sm">
+          {experience.location && (
+            <span className="text-gray-500 flex items-center gap-1">
+              📍 {experience.location}
+            </span>
+          )}
+          <span className="text-gray-500">
+            {experience.start_date || "Start Date"} -{" "}
+            {experience.isPresentCompany
+              ? "Present"
+              : experience.end_date || "End Date"}
+          </span>
+        </div>
+
+        {/* Highlights Preview */}
+        {experience.highlights && experience.highlights.length > 0 && (
+          <div className="mt-3">
+            <div
+              className="text-gray-600 text-sm prose prose-sm max-w-none"
+              dangerouslySetInnerHTML={{
+                __html: Array.isArray(experience.highlights)
+                  ? experience.highlights[0]?.substring(0, 200) +
+                    (experience.highlights[0]?.length > 200 ? "..." : "")
+                  : experience.highlights?.substring(0, 200) +
+                    (experience.highlights?.length > 200 ? "..." : ""),
+              }}
+            />
+          </div>
+        )}
       </div>
     </div>
   );
