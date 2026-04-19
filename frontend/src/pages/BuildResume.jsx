@@ -18,11 +18,13 @@ import {
   Save,
   Trash2,
   Trophy,
+  Upload,
   User as UserIcon,
   Wand2,
   X,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef } from "react";
+import axios from "axios";
 import AIAssistant from "../components/ai/AIAssistant";
 import QuickFillForm from "../components/ai/QuickFillForm";
 import RichTextEditor from "../components/ai/RichTextEditor";
@@ -92,6 +94,13 @@ const BuildResume = () => {
   const [showCustomSection, setShowCustomSection] = useState(false);
   const [editingCustomSection, setEditingCustomSection] = useState(null);
 
+  // Resume upload states
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [uploadedFile, setUploadedFile] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const fileInputRef = useRef(null);
+
   // Save state
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState({
@@ -99,6 +108,317 @@ const BuildResume = () => {
     success: false,
     message: "",
   });
+
+  // Gemini API configuration for extraction
+  const GEMINI_API_KEY = "AIzaSyCzXUA_GAl6qMOeISyr4rdS2ojodVpohZE";
+  const GEMINI_API_URL =
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent";
+
+  // Function to extract text from uploaded file
+  const extractTextFromFile = async (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        resolve(e.target.result);
+      };
+      reader.onerror = (e) => {
+        reject(e);
+      };
+      reader.readAsText(file);
+    });
+  };
+
+  // Function to parse resume using Gemini AI
+  const parseResumeWithAI = async (text) => {
+    try {
+      const prompt = `You are an expert resume parser. Extract the following information from this resume text and return ONLY valid JSON without any additional text or formatting:
+
+{
+  "user_profile": {
+    "full_name": "extract full name",
+    "email": "extract email address",
+    "phone": "extract phone number",
+    "location": "extract location/city",
+    "professional_title": "extract current job title or professional headline",
+    "linkedin_url": "extract LinkedIn URL if present",
+    "github_url": "extract GitHub URL if present",
+    "portfolio_url": "extract portfolio URL if present",
+    "behance_url": "extract Behance URL if present"
+  },
+  "summary": "extract professional summary or about section",
+  "skills": {
+    "languages": ["programming languages"],
+    "frameworks": ["frameworks and libraries"],
+    "tools": ["development tools"],
+    "softwares": ["software applications"],
+    "databases": ["databases"],
+    "cloud": ["cloud platforms"],
+    "others": ["other skills"]
+  },
+  "experience": [
+    {
+      "company_name": "company name",
+      "role": "job title",
+      "location": "job location",
+      "start_date": "start date (YYYY-MM)",
+      "end_date": "end date (YYYY-MM) or Present",
+      "isPresentCompany": false,
+      "highlights": ["achievement 1", "achievement 2"]
+    }
+  ],
+  "education": [
+    {
+      "institution_name": "school/university name",
+      "degree_name": "degree name",
+      "start_year": "start year",
+      "end_year": "end year",
+      "grade": "GPA or grade",
+      "highlights": ["relevant coursework or achievements"]
+    }
+  ],
+  "projects": [
+    {
+      "project_name": "project name",
+      "duration": "project duration",
+      "description": "project description",
+      "tech_stack": ["technologies used"],
+      "highlights": ["key features or achievements"],
+      "project_link": "project URL",
+      "github_link": "GitHub URL",
+      "live_link": "live demo URL"
+    }
+  ],
+  "certifications": [
+    {
+      "name": "certification name",
+      "issuer": "issuing organization",
+      "year": "year obtained",
+      "link": "certification URL"
+    }
+  ],
+  "achievements": [
+    {
+      "title": "achievement title",
+      "description": "achievement description",
+      "year": "year"
+    }
+  ],
+  "languages": [
+    {
+      "name": "language name",
+      "proficiency": "Native/Fluent/Professional Working/Limited Working/Elementary"
+    }
+  ],
+  "volunteering": [
+    {
+      "organization": "organization name",
+      "role": "volunteer role",
+      "duration": "time period",
+      "description": "description of volunteering work"
+    }
+  ],
+  "hobbies": ["hobby1", "hobby2"]
+}
+
+Resume Text:
+${text}
+
+Return ONLY the JSON object, no other text or explanation. If information is not found, use empty strings or empty arrays.`;
+
+      const requestBody = {
+        contents: [
+          {
+            parts: [
+              {
+                text: prompt,
+              },
+            ],
+          },
+        ],
+        generationConfig: {
+          temperature: 0.1,
+          topK: 1,
+          topP: 1,
+          maxOutputTokens: 8192,
+        },
+      };
+
+      const response = await axios.post(
+        `${GEMINI_API_URL}?key=${GEMINI_API_KEY}`,
+        requestBody,
+        {
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      );
+
+      if (
+        response.data &&
+        response.data.candidates &&
+        response.data.candidates[0]
+      ) {
+        let jsonText = response.data.candidates[0].content.parts[0].text;
+
+        // Clean the response to extract pure JSON
+        jsonText = jsonText
+          .replace(/```json\n?/g, "")
+          .replace(/```\n?/g, "")
+          .trim();
+
+        const parsedData = JSON.parse(jsonText);
+
+        // Add IDs to experience, education, projects, etc.
+        if (parsedData.experience) {
+          parsedData.experience = parsedData.experience.map((exp) => ({
+            ...exp,
+            id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+            highlights: exp.highlights || [],
+          }));
+        }
+
+        if (parsedData.education) {
+          parsedData.education = parsedData.education.map((edu) => ({
+            ...edu,
+            id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+            highlights: edu.highlights || [],
+          }));
+        }
+
+        if (parsedData.projects) {
+          parsedData.projects = parsedData.projects.map((proj) => ({
+            ...proj,
+            id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+            tech_stack: proj.tech_stack || [],
+            highlights: proj.highlights || [],
+          }));
+        }
+
+        if (parsedData.certifications) {
+          parsedData.certifications = parsedData.certifications.map((cert) => ({
+            ...cert,
+            id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+          }));
+        }
+
+        if (parsedData.achievements) {
+          parsedData.achievements = parsedData.achievements.map((ach) => ({
+            ...ach,
+            id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+          }));
+        }
+
+        if (parsedData.languages) {
+          parsedData.languages = parsedData.languages.map((lang) => ({
+            ...lang,
+            id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+          }));
+        }
+
+        if (parsedData.volunteering) {
+          parsedData.volunteering = parsedData.volunteering.map((vol) => ({
+            ...vol,
+            id: Date.now().toString() + Math.random().toString(36).substr(2, 9),
+          }));
+        }
+
+        return parsedData;
+      } else {
+        throw new Error("No data extracted");
+      }
+    } catch (error) {
+      console.error("Parse error:", error);
+      throw error;
+    }
+  };
+
+  // Handle file upload and extraction
+  const handleFileUpload = async (file) => {
+    if (!file) return;
+
+    setIsUploading(true);
+    setUploadProgress(0);
+
+    try {
+      // Simulate progress
+      const progressInterval = setInterval(() => {
+        setUploadProgress((prev) => {
+          if (prev >= 90) {
+            clearInterval(progressInterval);
+            return 90;
+          }
+          return prev + 10;
+        });
+      }, 200);
+
+      // Extract text from file (for PDF, DOCX, etc. you'd need additional libraries)
+      const text = await extractTextFromFile(file);
+
+      setUploadProgress(95);
+
+      // Parse with AI
+      const extractedData = await parseResumeWithAI(text);
+
+      clearInterval(progressInterval);
+      setUploadProgress(100);
+
+      // Merge with existing data
+      setResumeData((prev) => ({
+        ...prev,
+        user_profile: {
+          ...prev.user_profile,
+          ...extractedData.user_profile,
+        },
+        summary: extractedData.summary || prev.summary,
+        skills: {
+          ...prev.skills,
+          ...extractedData.skills,
+        },
+        experience: [...prev.experience, ...(extractedData.experience || [])],
+        education: [...prev.education, ...(extractedData.education || [])],
+        projects: [...prev.projects, ...(extractedData.projects || [])],
+        certifications: [
+          ...prev.certifications,
+          ...(extractedData.certifications || []),
+        ],
+        achievements: [
+          ...prev.achievements,
+          ...(extractedData.achievements || []),
+        ],
+        languages: [...prev.languages, ...(extractedData.languages || [])],
+        volunteering: [
+          ...prev.volunteering,
+          ...(extractedData.volunteering || []),
+        ],
+        hobbies: [...prev.hobbies, ...(extractedData.hobbies || [])],
+      }));
+
+      setSaveStatus({
+        show: true,
+        success: true,
+        message: "Resume uploaded and extracted successfully!",
+      });
+
+      setTimeout(() => {
+        setSaveStatus({ show: false, success: false, message: "" });
+      }, 3000);
+
+      setShowUploadModal(false);
+      setUploadedFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    } catch (error) {
+      console.error("Upload error:", error);
+      setSaveStatus({
+        show: true,
+        success: false,
+        message:
+          "Failed to extract resume. Please try again or enter manually.",
+      });
+    } finally {
+      setIsUploading(false);
+      setUploadProgress(0);
+    }
+  };
 
   // Save resume to backend
   const saveResume = async () => {
@@ -318,6 +638,112 @@ const BuildResume = () => {
       ),
     }));
 
+  // Upload Modal Component
+  const UploadModal = () => (
+    <Modal
+      isOpen={showUploadModal}
+      onClose={() => {
+        setShowUploadModal(false);
+        setUploadedFile(null);
+        setUploadProgress(0);
+      }}
+      title="Upload Resume"
+    >
+      <div className="space-y-6">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+          <p className="text-sm text-blue-800">
+            📄 Upload your existing resume (TXT format) and our AI will
+            automatically extract:
+          </p>
+          <ul className="text-sm text-blue-800 mt-2 space-y-1 list-disc list-inside">
+            <li>Personal information (name, email, phone, location)</li>
+            <li>Work experience and achievements</li>
+            <li>Education details</li>
+            <li>Skills (programming languages, frameworks, tools)</li>
+            <li>Projects, certifications, and achievements</li>
+            <li>Languages and volunteering experience</li>
+          </ul>
+        </div>
+
+        <div className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-500 transition-colors">
+          <input
+            ref={fileInputRef}
+            type="file"
+            onChange={(e) => {
+              const file = e.target.files[0];
+              if (file) {
+                setUploadedFile(file);
+              }
+            }}
+            className="hidden"
+            id="resume-upload"
+          />
+          <label
+            htmlFor="resume-upload"
+            className="cursor-pointer flex flex-col items-center gap-3"
+          >
+            <Upload size={48} className="text-gray-400" />
+            <div>
+              <p className="text-gray-600">
+                {uploadedFile
+                  ? uploadedFile.name
+                  : "Click to upload or drag and drop"}
+              </p>
+              <p className="text-sm text-gray-400 mt-1">
+                Supported format: .txt, .md (up to 5MB)
+              </p>
+            </div>
+          </label>
+        </div>
+
+        {isUploading && (
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm text-gray-600">
+              <span>Extracting resume data...</span>
+              <span>{uploadProgress}%</span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+              <div
+                className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${uploadProgress}%` }}
+              />
+            </div>
+          </div>
+        )}
+
+        <div className="flex justify-end gap-3">
+          <button
+            onClick={() => {
+              setShowUploadModal(false);
+              setUploadedFile(null);
+              setUploadProgress(0);
+            }}
+            className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => handleFileUpload(uploadedFile)}
+            disabled={!uploadedFile || isUploading}
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          >
+            {isUploading ? (
+              <>
+                <Loader2 className="animate-spin" size={18} />
+                Extracting...
+              </>
+            ) : (
+              <>
+                <Wand2 size={18} />
+                Extract & Import
+              </>
+            )}
+          </button>
+        </div>
+      </div>
+    </Modal>
+  );
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
@@ -330,6 +756,13 @@ const BuildResume = () => {
               </span>
             </div>
             <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowUploadModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+              >
+                <Upload size={18} /> Upload Resume
+              </button>
+
               <button
                 onClick={saveResume}
                 disabled={isSaving}
@@ -405,10 +838,10 @@ const BuildResume = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {isPreviewMode ? (
-          <ResumePreview accentColor={accentColor} />
+          <ResumePreview resumeData={resumeData} accentColor={accentColor} />
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Column */}
+            {/* Left Column - Same as before */}
             <div className="lg:col-span-1 space-y-6">
               {/* Profile Card */}
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -637,7 +1070,7 @@ const BuildResume = () => {
               </div>
             </div>
 
-            {/* Right Column */}
+            {/* Right Column - Same as before */}
             <div className="lg:col-span-2 space-y-6">
               {/* Experience Card */}
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -968,7 +1401,7 @@ const BuildResume = () => {
         )}
       </div>
 
-      {/* Modals */}
+      {/* Modals - Same as before */}
       <Modal
         isOpen={activeSection === "personal"}
         onClose={() => setActiveSection(null)}
@@ -1353,6 +1786,9 @@ const BuildResume = () => {
           }}
         />
       </Modal>
+
+      {/* Upload Modal */}
+      <UploadModal />
 
       {showAIAssistant && (
         <AIAssistant
