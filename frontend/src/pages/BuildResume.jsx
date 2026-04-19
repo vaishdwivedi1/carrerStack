@@ -1,10 +1,8 @@
 import {
-  AlignCenter,
-  AlignLeft,
-  AlignRight,
+  AlertCircle,
   Award,
-  Bold,
   Briefcase,
+  CheckCircle,
   Code2,
   Edit2,
   Eye,
@@ -12,29 +10,33 @@ import {
   FolderGit2,
   GraduationCap,
   Heart,
-  Highlighter,
-  Italic,
   Languages,
   Loader2,
   MapPin,
   Plus,
   PlusCircle,
-  RotateCcw,
   Save,
   Trash2,
   Trophy,
-  Type,
-  Underline,
   User as UserIcon,
   Wand2,
   X,
-  CheckCircle,
-  AlertCircle,
 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
-import axios from "axios";
-import { POSTMethod } from "../utils/server";
+import { useState } from "react";
+import AIAssistant from "../components/ai/AIAssistant";
+import QuickFillForm from "../components/ai/QuickFillForm";
+import RichTextEditor from "../components/ai/RichTextEditor";
+import Modal from "../components/common/Modal";
+import AchievementForm from "../components/resume/AchievementForm";
+import CertificationForm from "../components/resume/CertificationForm";
+import CustomSectionForm from "../components/resume/CustomSectionForm";
+import EducationForm from "../components/resume/EducationForm";
+import ExperienceForm from "../components/resume/ExperienceForm";
+import PersonalInfoForm from "../components/resume/PersonalInfoForm";
+import ProjectForm from "../components/resume/ProjectForm";
+import ResumePreview from "../components/resume/ResumePreview";
 import { API } from "../utils/APIS";
+import { POSTMethod } from "../utils/server";
 
 // Empty default resume data matching new structure
 const defaultResumeData = {
@@ -70,448 +72,9 @@ const defaultResumeData = {
   custom_sections: [],
 };
 
-// Rich Text Editor Component (same as before)
-const RichTextEditor = ({ value, onChange, placeholder, className = "" }) => {
-  const editorRef = useRef(null);
-  const [showColorPicker, setShowColorPicker] = useState(false);
-  const [isFocused, setIsFocused] = useState(false);
-
-  useEffect(() => {
-    if (editorRef.current && value !== editorRef.current.innerHTML) {
-      editorRef.current.innerHTML = value || "";
-    }
-  }, [value]);
-
-  const execCommand = (command, value = null) => {
-    document.execCommand(command, false, value);
-    if (editorRef.current) {
-      onChange(editorRef.current.innerHTML);
-    }
-    editorRef.current.focus();
-  };
-
-  const handleInput = () => {
-    if (editorRef.current) {
-      onChange(editorRef.current.innerHTML);
-    }
-  };
-
-  const handleKeyDown = (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      document.execCommand("insertLineBreak");
-      handleInput();
-    }
-  };
-
-  const handlePaste = (e) => {
-    e.preventDefault();
-    const text = e.clipboardData.getData("text/plain");
-    document.execCommand("insertText", false, text);
-    handleInput();
-  };
-
-  return (
-    <div
-      className={`border border-gray-300 rounded-lg overflow-hidden ${className}`}
-    >
-      <div className="bg-gray-50 border-b border-gray-300 p-2 flex flex-wrap gap-1 sticky top-0 z-10">
-        <button
-          type="button"
-          onMouseDown={(e) => {
-            e.preventDefault();
-            execCommand("bold");
-          }}
-          className="p-1.5 rounded hover:bg-gray-200"
-        >
-          <Bold size={16} />
-        </button>
-        <button
-          type="button"
-          onMouseDown={(e) => {
-            e.preventDefault();
-            execCommand("italic");
-          }}
-          className="p-1.5 rounded hover:bg-gray-200"
-        >
-          <Italic size={16} />
-        </button>
-        <button
-          type="button"
-          onMouseDown={(e) => {
-            e.preventDefault();
-            execCommand("underline");
-          }}
-          className="p-1.5 rounded hover:bg-gray-200"
-        >
-          <Underline size={16} />
-        </button>
-        <div className="w-px h-6 bg-gray-300 mx-1" />
-        <button
-          type="button"
-          onMouseDown={(e) => {
-            e.preventDefault();
-            execCommand("justifyLeft");
-          }}
-          className="p-1.5 rounded hover:bg-gray-200"
-        >
-          <AlignLeft size={16} />
-        </button>
-        <button
-          type="button"
-          onMouseDown={(e) => {
-            e.preventDefault();
-            execCommand("justifyCenter");
-          }}
-          className="p-1.5 rounded hover:bg-gray-200"
-        >
-          <AlignCenter size={16} />
-        </button>
-        <button
-          type="button"
-          onMouseDown={(e) => {
-            e.preventDefault();
-            execCommand("justifyRight");
-          }}
-          className="p-1.5 rounded hover:bg-gray-200"
-        >
-          <AlignRight size={16} />
-        </button>
-        <div className="w-px h-6 bg-gray-300 mx-1" />
-        <div className="relative">
-          <button
-            type="button"
-            onMouseDown={(e) => {
-              e.preventDefault();
-              setShowColorPicker(!showColorPicker);
-            }}
-            className="p-1.5 rounded hover:bg-gray-200"
-          >
-            <Type size={16} />
-          </button>
-          {showColorPicker && (
-            <div className="absolute top-full left-0 mt-1 bg-white border rounded-lg shadow-lg p-2 z-20">
-              <div className="grid grid-cols-5 gap-1">
-                {[
-                  "#000000",
-                  "#FF0000",
-                  "#00FF00",
-                  "#0000FF",
-                  "#FFFF00",
-                  "#FF00FF",
-                  "#00FFFF",
-                  "#FFA500",
-                  "#800080",
-                  "#008000",
-                ].map((color) => (
-                  <button
-                    key={color}
-                    onMouseDown={(e) => {
-                      e.preventDefault();
-                      execCommand("foreColor", color);
-                      setShowColorPicker(false);
-                    }}
-                    className="w-6 h-6 rounded border"
-                    style={{ backgroundColor: color }}
-                  />
-                ))}
-              </div>
-            </div>
-          )}
-        </div>
-        <button
-          type="button"
-          onMouseDown={(e) => {
-            e.preventDefault();
-            execCommand("backColor", "#FFFF00");
-          }}
-          className="p-1.5 rounded hover:bg-gray-200"
-        >
-          <Highlighter size={16} />
-        </button>
-        <button
-          type="button"
-          onMouseDown={(e) => {
-            e.preventDefault();
-            if (editorRef.current) {
-              editorRef.current.innerHTML = "";
-              onChange("");
-              editorRef.current.focus();
-            }
-          }}
-          className="p-1.5 rounded hover:bg-gray-200"
-        >
-          <RotateCcw size={16} />
-        </button>
-      </div>
-      <div
-        ref={editorRef}
-        contentEditable
-        onInput={handleInput}
-        onKeyDown={handleKeyDown}
-        onPaste={handlePaste}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
-        className="p-3 min-h-[150px] focus:outline-none prose prose-sm max-w-none"
-        style={{ fontFamily: "inherit" }}
-      />
-      {(!value || value === "<br>") && !isFocused && (
-        <div
-          className="absolute text-gray-400 pointer-events-none p-3"
-          style={{ marginTop: "-40px" }}
-        >
-          {placeholder}
-        </div>
-      )}
-    </div>
-  );
-};
-
-// AI Assistant Component (same as before)
-const AIAssistant = ({
-  currentContent,
-  onUpdate,
-  onClose,
-  sectionType,
-  fieldName,
-}) => {
-  const [prompt, setPrompt] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [aiSuggestion, setAiSuggestion] = useState("");
-
-  const handleEnhance = async () => {
-    setIsLoading(true);
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-    let enhanced = currentContent || "Your enhanced content will appear here.";
-    setAiSuggestion(enhanced);
-    setIsLoading(false);
-  };
-
-  const applySuggestion = () => {
-    if (aiSuggestion) {
-      onUpdate(aiSuggestion);
-      onClose();
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <Wand2 className="text-purple-600" size={24} />
-            <h3 className="text-xl font-semibold text-gray-800">
-              AI Assistant - {fieldName || sectionType}
-            </h3>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-full hover:bg-gray-100"
-          >
-            <X size={20} />
-          </button>
-        </div>
-        <div className="p-6 space-y-4">
-          <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-            <p className="text-sm text-purple-800">
-              ✨ AI can help you improve grammar, make writing more
-              professional, and add impactful action verbs.
-            </p>
-          </div>
-          <textarea
-            placeholder="Describe what you want to improve..."
-            value={prompt}
-            onChange={(e) => setPrompt(e.target.value)}
-            rows={3}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-          />
-          <button
-            onClick={handleEnhance}
-            disabled={isLoading}
-            className="w-full py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center justify-center gap-2"
-          >
-            {isLoading ? (
-              <Loader2 className="animate-spin" size={20} />
-            ) : (
-              <Wand2 size={20} />
-            )}
-            {isLoading ? "Generating..." : "Generate AI Enhancement"}
-          </button>
-          {aiSuggestion && (
-            <div className="mt-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                AI Suggestion:
-              </label>
-              <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 max-h-[300px] overflow-y-auto whitespace-pre-wrap text-sm text-gray-700">
-                {aiSuggestion}
-              </div>
-              <button
-                onClick={applySuggestion}
-                className="mt-3 w-full py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
-              >
-                Apply This Enhancement
-              </button>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Quick Fill Form
-const QuickFillForm = ({ onGenerate, onClose }) => {
-  const [formData, setFormData] = useState({
-    full_name: "",
-    professional_title: "",
-    email: "",
-    phone: "",
-    location: "",
-    summary: "",
-  });
-
-  const handleGenerate = () => {
-    const generatedResume = {
-      user_profile: {
-        full_name: formData.full_name || "",
-        email: formData.email || "",
-        phone: formData.phone || "",
-        location: formData.location || "",
-        professional_title: formData.professional_title || "",
-        linkedin_url: "",
-        github_url: "",
-        portfolio_url: "",
-        behance_url: "",
-      },
-      summary: formData.summary || "",
-      skills: {
-        languages: [],
-        frameworks: [],
-        tools: [],
-        softwares: [],
-        databases: [],
-        cloud: [],
-        others: [],
-      },
-      experience: [],
-      projects: [],
-      education: [],
-      certifications: [],
-      achievements: [],
-      languages: [],
-      volunteering: [],
-      hobbies: [],
-      custom_sections: [],
-    };
-    onGenerate(generatedResume);
-    onClose();
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto shadow-2xl">
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-          <h3 className="text-xl font-semibold text-gray-800">
-            Quick Resume Builder
-          </h3>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-full hover:bg-gray-100"
-          >
-            <X size={20} />
-          </button>
-        </div>
-        <div className="p-6 space-y-4">
-          <input
-            type="text"
-            placeholder="Full Name"
-            value={formData.full_name}
-            onChange={(e) =>
-              setFormData({ ...formData, full_name: e.target.value })
-            }
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-          />
-          <input
-            type="text"
-            placeholder="Professional Title"
-            value={formData.professional_title}
-            onChange={(e) =>
-              setFormData({ ...formData, professional_title: e.target.value })
-            }
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-          />
-          <div className="grid grid-cols-2 gap-4">
-            <input
-              type="email"
-              placeholder="Email"
-              value={formData.email}
-              onChange={(e) =>
-                setFormData({ ...formData, email: e.target.value })
-              }
-              className="px-4 py-2 border border-gray-300 rounded-lg"
-            />
-            <input
-              type="tel"
-              placeholder="Phone"
-              value={formData.phone}
-              onChange={(e) =>
-                setFormData({ ...formData, phone: e.target.value })
-              }
-              className="px-4 py-2 border border-gray-300 rounded-lg"
-            />
-          </div>
-          <input
-            type="text"
-            placeholder="Location"
-            value={formData.location}
-            onChange={(e) =>
-              setFormData({ ...formData, location: e.target.value })
-            }
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-          />
-          <textarea
-            placeholder="Professional Summary"
-            value={formData.summary}
-            onChange={(e) =>
-              setFormData({ ...formData, summary: e.target.value })
-            }
-            rows={3}
-            className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-          />
-          <button
-            onClick={handleGenerate}
-            className="w-full py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 flex items-center justify-center gap-2"
-          >
-            <Wand2 size={20} /> Generate Resume
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const Modal = ({ isOpen, onClose, title, children }) => {
-  if (!isOpen) return null;
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-white rounded-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl">
-        <div className="sticky top-0 bg-white border-b border-gray-200 px-6 py-4 flex justify-between items-center">
-          <h3 className="text-xl font-semibold text-gray-800">{title}</h3>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-full hover:bg-gray-100"
-          >
-            <X size={20} />
-          </button>
-        </div>
-        <div className="p-6">{children}</div>
-      </div>
-    </div>
-  );
-};
-
 // Main Component
 const BuildResume = () => {
+  const userId = JSON.parse(localStorage.getItem("user"))._id;
   const [resumeData, setResumeData] = useState(defaultResumeData);
   const [activeSection, setActiveSection] = useState(null);
   const [editingItem, setEditingItem] = useState(null);
@@ -525,6 +88,7 @@ const BuildResume = () => {
   });
   const [showQuickFill, setShowQuickFill] = useState(false);
   const [editingSummary, setEditingSummary] = useState(false);
+  const [tempSummary, setTempSummary] = useState("");
   const [showCustomSection, setShowCustomSection] = useState(false);
   const [editingCustomSection, setEditingCustomSection] = useState(null);
 
@@ -536,34 +100,12 @@ const BuildResume = () => {
     message: "",
   });
 
-  // Get user ID from localStorage or context (adjust based on your auth system)
-  const getUserId = () => {
-    // Option 1: From localStorage
-    const user = localStorage.getItem("user");
-    if (user) {
-      try {
-        return JSON.parse(user)._id;
-      } catch (e) {
-        return null;
-      }
-    }
-  };
-
-  // Get auth token
-  const getAuthToken = () => {
-    return localStorage.getItem("token");
-  };
-
   // Save resume to backend
   const saveResume = async () => {
     setIsSaving(true);
     setSaveStatus({ show: false, success: false, message: "" });
 
     try {
-      const token = getAuthToken();
-      const userId = getUserId();
-
-      // Validate required fields before saving
       const requiredErrors = [];
       if (!resumeData.user_profile.full_name)
         requiredErrors.push("Full name is required");
@@ -584,7 +126,6 @@ const BuildResume = () => {
         return;
       }
 
-      // Prepare payload
       const payload = {
         userId: userId,
         user_profile: resumeData.user_profile,
@@ -601,7 +142,6 @@ const BuildResume = () => {
         custom_sections: resumeData.custom_sections,
       };
 
-      // Make API call
       const response = await POSTMethod(API.buildResume, payload);
 
       if (response.data.success) {
@@ -611,12 +151,10 @@ const BuildResume = () => {
           message: "Resume saved successfully!",
         });
 
-        // Optionally store resume ID
         if (response.data.data?._id) {
           localStorage.setItem("resumeId", response.data.data._id);
         }
 
-        // Auto hide success message after 3 seconds
         setTimeout(() => {
           setSaveStatus({ show: false, success: false, message: "" });
         }, 3000);
@@ -634,7 +172,6 @@ const BuildResume = () => {
           "Failed to save resume. Please try again.",
       });
 
-      // Auto hide error message after 5 seconds
       setTimeout(() => {
         setSaveStatus({ show: false, success: false, message: "" });
       }, 5000);
@@ -643,32 +180,6 @@ const BuildResume = () => {
     }
   };
 
-  // Load existing resume (if editing)
-  const loadResume = async () => {
-    try {
-      const token = getAuthToken();
-      const response = await axios.get(
-        `${process.env.REACT_APP_API_URL || "http://localhost:5000"}/api/resume/my-resume`,
-        {
-          headers: { Authorization: token ? `Bearer ${token}` : "" },
-        },
-      );
-
-      if (response.data.success && response.data.data) {
-        setResumeData(response.data.data);
-      }
-    } catch (error) {
-      console.error("Load error:", error);
-      // No resume found, continue with empty form
-    }
-  };
-
-  // Load resume on component mount
-  useEffect(() => {
-    loadResume();
-  }, []);
-
-  // Rest of your CRUD functions (same as before)
   const updateResumeData = (section, data) =>
     setResumeData((prev) => ({ ...prev, [section]: data }));
 
@@ -741,11 +252,6 @@ const BuildResume = () => {
         cert.id === id ? { ...cert, ...updatedCert } : cert,
       ),
     }));
-  const deleteCertification = (id) =>
-    setResumeData((prev) => ({
-      ...prev,
-      certifications: prev.certifications.filter((cert) => cert.id !== id),
-    }));
 
   const addAchievement = (ach) =>
     setResumeData((prev) => ({
@@ -755,6 +261,7 @@ const BuildResume = () => {
         { ...ach, id: Date.now().toString() },
       ],
     }));
+
   const updateAchievement = (id, updatedAch) =>
     setResumeData((prev) => ({
       ...prev,
@@ -768,50 +275,6 @@ const BuildResume = () => {
       achievements: prev.achievements.filter((ach) => ach.id !== id),
     }));
 
-  const addLanguage = (lang) =>
-    setResumeData((prev) => ({
-      ...prev,
-      languages: [...prev.languages, { ...lang, id: Date.now().toString() }],
-    }));
-  const updateLanguage = (id, updatedLang) =>
-    setResumeData((prev) => ({
-      ...prev,
-      languages: prev.languages.map((lang) =>
-        lang.id === id ? { ...lang, ...updatedLang } : lang,
-      ),
-    }));
-  const deleteLanguage = (id) =>
-    setResumeData((prev) => ({
-      ...prev,
-      languages: prev.languages.filter((lang) => lang.id !== id),
-    }));
-
-  const addVolunteering = (vol) =>
-    setResumeData((prev) => ({
-      ...prev,
-      volunteering: [
-        ...prev.volunteering,
-        { ...vol, id: Date.now().toString() },
-      ],
-    }));
-  const updateVolunteering = (id, updatedVol) =>
-    setResumeData((prev) => ({
-      ...prev,
-      volunteering: prev.volunteering.map((vol) =>
-        vol.id === id ? { ...vol, ...updatedVol } : vol,
-      ),
-    }));
-  const deleteVolunteering = (id) =>
-    setResumeData((prev) => ({
-      ...prev,
-      volunteering: prev.volunteering.filter((vol) => vol.id !== id),
-    }));
-
-  const updateSkills = (category, values) =>
-    setResumeData((prev) => ({
-      ...prev,
-      skills: { ...prev.skills, [category]: values },
-    }));
   const addSkillItem = (category, value) => {
     if (value.trim()) {
       setResumeData((prev) => ({
@@ -831,11 +294,6 @@ const BuildResume = () => {
         [category]: prev.skills[category].filter((_, i) => i !== index),
       },
     }));
-
-  const updateSummary = (newSummary) => {
-    updateResumeData("summary", newSummary);
-    setEditingSummary(false);
-  };
 
   const addCustomSection = (section) =>
     setResumeData((prev) => ({
@@ -860,1327 +318,9 @@ const BuildResume = () => {
       ),
     }));
 
-  // Form Components (same as before - shortened for brevity)
-  const ExperienceForm = ({ exp, onSave, onCancel }) => {
-    const [formData, setFormData] = useState(
-      exp || {
-        company_name: "",
-        role: "",
-        location: "",
-        start_date: "",
-        end_date: "",
-        isPresentCompany: false,
-        highlights: [],
-      },
-    );
-    const [newHighlight, setNewHighlight] = useState("");
-    const addHighlight = () => {
-      if (newHighlight.trim()) {
-        setFormData({
-          ...formData,
-          highlights: [...(formData.highlights || []), newHighlight.trim()],
-        });
-        setNewHighlight("");
-      }
-    };
-    const removeHighlight = (index) =>
-      setFormData({
-        ...formData,
-        highlights: formData.highlights.filter((_, i) => i !== index),
-      });
-    return (
-      <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <input
-            type="text"
-            placeholder="Company Name"
-            value={formData.company_name}
-            onChange={(e) =>
-              setFormData({ ...formData, company_name: e.target.value })
-            }
-            className="px-4 py-2 border border-gray-300 rounded-lg"
-          />
-          <input
-            type="text"
-            placeholder="Role / Title"
-            value={formData.role}
-            onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-            className="px-4 py-2 border border-gray-300 rounded-lg"
-          />
-          <input
-            type="text"
-            placeholder="Location"
-            value={formData.location}
-            onChange={(e) =>
-              setFormData({ ...formData, location: e.target.value })
-            }
-            className="px-4 py-2 border border-gray-300 rounded-lg"
-          />
-          <div className="flex gap-2">
-            <input
-              type="text"
-              placeholder="Start Date"
-              value={formData.start_date}
-              onChange={(e) =>
-                setFormData({ ...formData, start_date: e.target.value })
-              }
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg"
-            />
-            {!formData.isPresentCompany ? (
-              <input
-                type="text"
-                placeholder="End Date"
-                value={formData.end_date}
-                onChange={(e) =>
-                  setFormData({ ...formData, end_date: e.target.value })
-                }
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg"
-              />
-            ) : (
-              <input
-                type="text"
-                placeholder="Present"
-                value="Present"
-                disabled
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg bg-gray-50"
-              />
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              checked={formData.isPresentCompany}
-              onChange={(e) =>
-                setFormData({
-                  ...formData,
-                  isPresentCompany: e.target.checked,
-                  end_date: e.target.checked ? "" : formData.end_date,
-                })
-              }
-              className="w-4 h-4"
-            />
-            <label className="text-sm text-gray-600">
-              I currently work here
-            </label>
-          </div>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Key Responsibilities & Achievements
-          </label>
-          {formData.highlights?.map((highlight, index) => (
-            <div key={index} className="flex gap-2 mb-2">
-              <RichTextEditor
-                value={highlight}
-                onChange={(value) => {
-                  const newHighlights = [...formData.highlights];
-                  newHighlights[index] = value;
-                  setFormData({ ...formData, highlights: newHighlights });
-                }}
-                placeholder={`Highlight ${index + 1}`}
-                className="flex-1"
-              />
-              <button
-                type="button"
-                onClick={() => removeHighlight(index)}
-                className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
-              >
-                <Trash2 size={18} />
-              </button>
-            </div>
-          ))}
-          <div className="flex gap-2 mt-2">
-            <input
-              type="text"
-              value={newHighlight}
-              onChange={(e) => setNewHighlight(e.target.value)}
-              placeholder="Add a responsibility or achievement"
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg"
-              onKeyPress={(e) => e.key === "Enter" && addHighlight()}
-            />
-            <button
-              type="button"
-              onClick={addHighlight}
-              className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200"
-            >
-              <Plus size={16} /> Add
-            </button>
-          </div>
-        </div>
-        <div className="flex justify-end gap-3 pt-4">
-          <button
-            onClick={onCancel}
-            className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => onSave(formData)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Save
-          </button>
-        </div>
-      </div>
-    );
-  };
-
-  const ProjectForm = ({ project, onSave, onCancel }) => {
-    const [formData, setFormData] = useState(
-      project || {
-        project_name: "",
-        duration: "",
-        description: "",
-        tech_stack: [],
-        highlights: [],
-        project_link: "",
-        github_link: "",
-        live_link: "",
-      },
-    );
-    const [techInput, setTechInput] = useState("");
-    const [newHighlight, setNewHighlight] = useState("");
-    const addTech = () => {
-      if (techInput.trim()) {
-        setFormData({
-          ...formData,
-          tech_stack: [...(formData.tech_stack || []), techInput.trim()],
-        });
-        setTechInput("");
-      }
-    };
-    const removeTech = (index) =>
-      setFormData({
-        ...formData,
-        tech_stack: formData.tech_stack.filter((_, i) => i !== index),
-      });
-    const addHighlight = () => {
-      if (newHighlight.trim()) {
-        setFormData({
-          ...formData,
-          highlights: [...(formData.highlights || []), newHighlight.trim()],
-        });
-        setNewHighlight("");
-      }
-    };
-    const removeHighlight = (index) =>
-      setFormData({
-        ...formData,
-        highlights: formData.highlights.filter((_, i) => i !== index),
-      });
-    return (
-      <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <input
-            type="text"
-            placeholder="Project Name"
-            value={formData.project_name}
-            onChange={(e) =>
-              setFormData({ ...formData, project_name: e.target.value })
-            }
-            className="px-4 py-2 border border-gray-300 rounded-lg"
-          />
-          <input
-            type="text"
-            placeholder="Duration (e.g., 3 months)"
-            value={formData.duration}
-            onChange={(e) =>
-              setFormData({ ...formData, duration: e.target.value })
-            }
-            className="px-4 py-2 border border-gray-300 rounded-lg"
-          />
-        </div>
-        <RichTextEditor
-          value={formData.description}
-          onChange={(value) => setFormData({ ...formData, description: value })}
-          placeholder="Project Description"
-          className="w-full"
-        />
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Tech Stack
-          </label>
-          <div className="flex gap-2 mb-2">
-            <input
-              type="text"
-              value={techInput}
-              onChange={(e) => setTechInput(e.target.value)}
-              placeholder="e.g., React, Node.js"
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg"
-              onKeyPress={(e) => e.key === "Enter" && addTech()}
-            />
-            <button
-              onClick={addTech}
-              className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200"
-            >
-              Add
-            </button>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            {formData.tech_stack?.map((tech, index) => (
-              <span
-                key={index}
-                className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-sm flex items-center gap-1"
-              >
-                {tech}
-                <button
-                  onClick={() => removeTech(index)}
-                  className="hover:text-blue-900"
-                >
-                  ×
-                </button>
-              </span>
-            ))}
-          </div>
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Project Highlights
-          </label>
-          {formData.highlights?.map((highlight, index) => (
-            <div key={index} className="flex gap-2 mb-2">
-              <input
-                type="text"
-                value={highlight}
-                onChange={(e) => {
-                  const newHighlights = [...formData.highlights];
-                  newHighlights[index] = e.target.value;
-                  setFormData({ ...formData, highlights: newHighlights });
-                }}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg"
-              />
-              <button
-                onClick={() => removeHighlight(index)}
-                className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
-              >
-                <Trash2 size={18} />
-              </button>
-            </div>
-          ))}
-          <div className="flex gap-2 mt-2">
-            <input
-              type="text"
-              value={newHighlight}
-              onChange={(e) => setNewHighlight(e.target.value)}
-              placeholder="Add a highlight"
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg"
-              onKeyPress={(e) => e.key === "Enter" && addHighlight()}
-            />
-            <button
-              onClick={addHighlight}
-              className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200"
-            >
-              <Plus size={16} /> Add
-            </button>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <input
-            type="url"
-            placeholder="Project Link"
-            value={formData.project_link}
-            onChange={(e) =>
-              setFormData({ ...formData, project_link: e.target.value })
-            }
-            className="px-4 py-2 border border-gray-300 rounded-lg"
-          />
-          <input
-            type="url"
-            placeholder="GitHub Link"
-            value={formData.github_link}
-            onChange={(e) =>
-              setFormData({ ...formData, github_link: e.target.value })
-            }
-            className="px-4 py-2 border border-gray-300 rounded-lg"
-          />
-          <input
-            type="url"
-            placeholder="Live Demo Link"
-            value={formData.live_link}
-            onChange={(e) =>
-              setFormData({ ...formData, live_link: e.target.value })
-            }
-            className="px-4 py-2 border border-gray-300 rounded-lg"
-          />
-        </div>
-        <div className="flex justify-end gap-3 pt-4">
-          <button
-            onClick={onCancel}
-            className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => onSave(formData)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Save
-          </button>
-        </div>
-      </div>
-    );
-  };
-
-  const EducationForm = ({ edu, onSave, onCancel }) => {
-    const [formData, setFormData] = useState(
-      edu || {
-        institution_name: "",
-        degree_name: "",
-        start_year: "",
-        end_year: "",
-        grade: "",
-        highlights: [],
-      },
-    );
-    const [newHighlight, setNewHighlight] = useState("");
-    const addHighlight = () => {
-      if (newHighlight.trim()) {
-        setFormData({
-          ...formData,
-          highlights: [...(formData.highlights || []), newHighlight.trim()],
-        });
-        setNewHighlight("");
-      }
-    };
-    const removeHighlight = (index) =>
-      setFormData({
-        ...formData,
-        highlights: formData.highlights.filter((_, i) => i !== index),
-      });
-    return (
-      <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <input
-            type="text"
-            placeholder="Institution Name"
-            value={formData.institution_name}
-            onChange={(e) =>
-              setFormData({ ...formData, institution_name: e.target.value })
-            }
-            className="px-4 py-2 border border-gray-300 rounded-lg"
-          />
-          <input
-            type="text"
-            placeholder="Degree Name"
-            value={formData.degree_name}
-            onChange={(e) =>
-              setFormData({ ...formData, degree_name: e.target.value })
-            }
-            className="px-4 py-2 border border-gray-300 rounded-lg"
-          />
-          <input
-            type="text"
-            placeholder="Start Year"
-            value={formData.start_year}
-            onChange={(e) =>
-              setFormData({ ...formData, start_year: e.target.value })
-            }
-            className="px-4 py-2 border border-gray-300 rounded-lg"
-          />
-          <input
-            type="text"
-            placeholder="End Year"
-            value={formData.end_year}
-            onChange={(e) =>
-              setFormData({ ...formData, end_year: e.target.value })
-            }
-            className="px-4 py-2 border border-gray-300 rounded-lg"
-          />
-          <input
-            type="text"
-            placeholder="Grade / GPA"
-            value={formData.grade}
-            onChange={(e) =>
-              setFormData({ ...formData, grade: e.target.value })
-            }
-            className="px-4 py-2 border border-gray-300 rounded-lg"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Highlights / Achievements
-          </label>
-          {formData.highlights?.map((highlight, index) => (
-            <div key={index} className="flex gap-2 mb-2">
-              <input
-                type="text"
-                value={highlight}
-                onChange={(e) => {
-                  const newHighlights = [...formData.highlights];
-                  newHighlights[index] = e.target.value;
-                  setFormData({ ...formData, highlights: newHighlights });
-                }}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg"
-              />
-              <button
-                onClick={() => removeHighlight(index)}
-                className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
-              >
-                <Trash2 size={18} />
-              </button>
-            </div>
-          ))}
-          <div className="flex gap-2 mt-2">
-            <input
-              type="text"
-              value={newHighlight}
-              onChange={(e) => setNewHighlight(e.target.value)}
-              placeholder="Add an achievement"
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg"
-              onKeyPress={(e) => e.key === "Enter" && addHighlight()}
-            />
-            <button
-              onClick={addHighlight}
-              className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200"
-            >
-              <Plus size={16} /> Add
-            </button>
-          </div>
-        </div>
-        <div className="flex justify-end gap-3 pt-4">
-          <button
-            onClick={onCancel}
-            className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => onSave(formData)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Save
-          </button>
-        </div>
-      </div>
-    );
-  };
-
-  const CertificationForm = ({ cert, onSave, onCancel }) => {
-    const [formData, setFormData] = useState(
-      cert || { name: "", issuer: "", year: "", link: "" },
-    );
-    return (
-      <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <input
-            type="text"
-            placeholder="Certification Name"
-            value={formData.name}
-            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-            className="px-4 py-2 border border-gray-300 rounded-lg"
-          />
-          <input
-            type="text"
-            placeholder="Issuer"
-            value={formData.issuer}
-            onChange={(e) =>
-              setFormData({ ...formData, issuer: e.target.value })
-            }
-            className="px-4 py-2 border border-gray-300 rounded-lg"
-          />
-          <input
-            type="text"
-            placeholder="Year"
-            value={formData.year}
-            onChange={(e) => setFormData({ ...formData, year: e.target.value })}
-            className="px-4 py-2 border border-gray-300 rounded-lg"
-          />
-          <input
-            type="url"
-            placeholder="Certification Link"
-            value={formData.link}
-            onChange={(e) => setFormData({ ...formData, link: e.target.value })}
-            className="px-4 py-2 border border-gray-300 rounded-lg"
-          />
-        </div>
-        <div className="flex justify-end gap-3 pt-4">
-          <button
-            onClick={onCancel}
-            className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => onSave(formData)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Save
-          </button>
-        </div>
-      </div>
-    );
-  };
-
-  const AchievementForm = ({ ach, onSave, onCancel }) => {
-    const [formData, setFormData] = useState(
-      ach || { title: "", description: "", year: "" },
-    );
-    return (
-      <div className="space-y-4">
-        <input
-          type="text"
-          placeholder="Achievement Title"
-          value={formData.title}
-          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-        />
-        <RichTextEditor
-          value={formData.description}
-          onChange={(value) => setFormData({ ...formData, description: value })}
-          placeholder="Achievement Description"
-          className="w-full"
-        />
-        <input
-          type="text"
-          placeholder="Year"
-          value={formData.year}
-          onChange={(e) => setFormData({ ...formData, year: e.target.value })}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-        />
-        <div className="flex justify-end gap-3 pt-4">
-          <button
-            onClick={onCancel}
-            className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => onSave(formData)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Save
-          </button>
-        </div>
-      </div>
-    );
-  };
-
-  const LanguageForm = ({ lang, onSave, onCancel }) => {
-    const [formData, setFormData] = useState(
-      lang || { name: "", proficiency: "" },
-    );
-    const proficiencies = [
-      "Native",
-      "Fluent",
-      "Professional Working",
-      "Limited Working",
-      "Elementary",
-    ];
-    return (
-      <div className="space-y-4">
-        <input
-          type="text"
-          placeholder="Language"
-          value={formData.name}
-          onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-        />
-        <select
-          value={formData.proficiency}
-          onChange={(e) =>
-            setFormData({ ...formData, proficiency: e.target.value })
-          }
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-        >
-          <option value="">Select Proficiency</option>
-          {proficiencies.map((p) => (
-            <option key={p} value={p}>
-              {p}
-            </option>
-          ))}
-        </select>
-        <div className="flex justify-end gap-3 pt-4">
-          <button
-            onClick={onCancel}
-            className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => onSave(formData)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Save
-          </button>
-        </div>
-      </div>
-    );
-  };
-
-  const VolunteeringForm = ({ vol, onSave, onCancel }) => {
-    const [formData, setFormData] = useState(
-      vol || { organization: "", role: "", duration: "", description: "" },
-    );
-    return (
-      <div className="space-y-4">
-        <input
-          type="text"
-          placeholder="Organization"
-          value={formData.organization}
-          onChange={(e) =>
-            setFormData({ ...formData, organization: e.target.value })
-          }
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-        />
-        <input
-          type="text"
-          placeholder="Role"
-          value={formData.role}
-          onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-        />
-        <input
-          type="text"
-          placeholder="Duration"
-          value={formData.duration}
-          onChange={(e) =>
-            setFormData({ ...formData, duration: e.target.value })
-          }
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-        />
-        <RichTextEditor
-          value={formData.description}
-          onChange={(value) => setFormData({ ...formData, description: value })}
-          placeholder="Description"
-          className="w-full"
-        />
-        <div className="flex justify-end gap-3 pt-4">
-          <button
-            onClick={onCancel}
-            className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => onSave(formData)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Save
-          </button>
-        </div>
-      </div>
-    );
-  };
-
-  const CustomSectionForm = ({ section, onSave, onCancel }) => {
-    const [formData, setFormData] = useState(
-      section || { title: "", items: [] },
-    );
-    const [newItem, setNewItem] = useState("");
-    const addItem = () => {
-      if (newItem.trim()) {
-        setFormData({
-          ...formData,
-          items: [...formData.items, newItem.trim()],
-        });
-        setNewItem("");
-      }
-    };
-    const removeItem = (index) =>
-      setFormData({
-        ...formData,
-        items: formData.items.filter((_, i) => i !== index),
-      });
-    return (
-      <div className="space-y-4">
-        <input
-          type="text"
-          placeholder="Section Title"
-          value={formData.title}
-          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-          className="w-full px-4 py-2 border border-gray-300 rounded-lg"
-        />
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Items
-          </label>
-          {formData.items.map((item, index) => (
-            <div key={index} className="flex gap-2 mb-2">
-              <input
-                type="text"
-                value={item}
-                onChange={(e) => {
-                  const newItems = [...formData.items];
-                  newItems[index] = e.target.value;
-                  setFormData({ ...formData, items: newItems });
-                }}
-                className="flex-1 px-4 py-2 border border-gray-300 rounded-lg"
-              />
-              <button
-                onClick={() => removeItem(index)}
-                className="p-2 text-red-500 hover:bg-red-50 rounded-lg"
-              >
-                <Trash2 size={18} />
-              </button>
-            </div>
-          ))}
-          <div className="flex gap-2 mt-2">
-            <input
-              type="text"
-              value={newItem}
-              onChange={(e) => setNewItem(e.target.value)}
-              placeholder="Add item"
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg"
-              onKeyPress={(e) => e.key === "Enter" && addItem()}
-            />
-            <button
-              onClick={addItem}
-              className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200"
-            >
-              <Plus size={16} /> Add
-            </button>
-          </div>
-        </div>
-        <div className="flex justify-end gap-3 pt-4">
-          <button
-            onClick={onCancel}
-            className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => onSave(formData)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Save
-          </button>
-        </div>
-      </div>
-    );
-  };
-
-  const PersonalInfoForm = ({ data, onSave, onClose }) => {
-    const [formData, setFormData] = useState(data);
-    return (
-      <div className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <input
-            type="text"
-            placeholder="Full Name"
-            value={formData.full_name}
-            onChange={(e) =>
-              setFormData({ ...formData, full_name: e.target.value })
-            }
-            className="px-4 py-2 border border-gray-300 rounded-lg"
-          />
-          <input
-            type="text"
-            placeholder="Professional Title"
-            value={formData.professional_title}
-            onChange={(e) =>
-              setFormData({ ...formData, professional_title: e.target.value })
-            }
-            className="px-4 py-2 border border-gray-300 rounded-lg"
-          />
-          <input
-            type="email"
-            placeholder="Email"
-            value={formData.email}
-            onChange={(e) =>
-              setFormData({ ...formData, email: e.target.value })
-            }
-            className="px-4 py-2 border border-gray-300 rounded-lg"
-          />
-          <input
-            type="tel"
-            placeholder="Phone"
-            value={formData.phone}
-            onChange={(e) =>
-              setFormData({ ...formData, phone: e.target.value })
-            }
-            className="px-4 py-2 border border-gray-300 rounded-lg"
-          />
-          <input
-            type="text"
-            placeholder="Location"
-            value={formData.location}
-            onChange={(e) =>
-              setFormData({ ...formData, location: e.target.value })
-            }
-            className="px-4 py-2 border border-gray-300 rounded-lg"
-          />
-        </div>
-        <div className="grid grid-cols-2 gap-4">
-          <input
-            type="url"
-            placeholder="LinkedIn URL"
-            value={formData.linkedin_url}
-            onChange={(e) =>
-              setFormData({ ...formData, linkedin_url: e.target.value })
-            }
-            className="px-4 py-2 border border-gray-300 rounded-lg"
-          />
-          <input
-            type="url"
-            placeholder="GitHub URL"
-            value={formData.github_url}
-            onChange={(e) =>
-              setFormData({ ...formData, github_url: e.target.value })
-            }
-            className="px-4 py-2 border border-gray-300 rounded-lg"
-          />
-          <input
-            type="url"
-            placeholder="Portfolio URL"
-            value={formData.portfolio_url}
-            onChange={(e) =>
-              setFormData({ ...formData, portfolio_url: e.target.value })
-            }
-            className="px-4 py-2 border border-gray-300 rounded-lg"
-          />
-          <input
-            type="url"
-            placeholder="Behance URL"
-            value={formData.behance_url}
-            onChange={(e) =>
-              setFormData({ ...formData, behance_url: e.target.value })
-            }
-            className="px-4 py-2 border border-gray-300 rounded-lg"
-          />
-        </div>
-        <div className="flex justify-end gap-3 pt-4">
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => onSave(formData)}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-          >
-            Save
-          </button>
-        </div>
-      </div>
-    );
-  };
-
-  const ResumePreview = () => (
-    <div
-      className="bg-white shadow-2xl rounded-xl overflow-hidden"
-      style={{ fontFamily: "'Charter', 'Times New Roman', serif" }}
-    >
-      <div
-        className="text-center py-8 px-6 border-b"
-        style={{ borderBottomColor: `${accentColor}20` }}
-      >
-        <h1 className="text-4xl font-bold mb-2" style={{ color: accentColor }}>
-          {resumeData.user_profile.full_name || "Your Name"}
-        </h1>
-        <p className="text-gray-600 mb-3">
-          {resumeData.user_profile.professional_title || "Professional Title"}
-        </p>
-        <div className="flex flex-wrap justify-center gap-3 text-sm text-gray-600">
-          {resumeData.user_profile.email && (
-            <>
-              <a
-                href={`mailto:${resumeData.user_profile.email}`}
-                className="hover:underline"
-              >
-                {resumeData.user_profile.email}
-              </a>
-              <span>|</span>
-            </>
-          )}
-          {resumeData.user_profile.phone && (
-            <a
-              href={`tel:${resumeData.user_profile.phone}`}
-              className="hover:underline"
-            >
-              {resumeData.user_profile.phone}
-            </a>
-          )}
-          {resumeData.user_profile.location && (
-            <>
-              <span>|</span>
-              <span className="flex items-center gap-1">
-                <MapPin size={12} />
-                {resumeData.user_profile.location}
-              </span>
-            </>
-          )}
-          {resumeData.user_profile.linkedin_url && (
-            <>
-              <span>|</span>
-              <a
-                href={resumeData.user_profile.linkedin_url}
-                target="_blank"
-                className="hover:underline"
-              >
-                LinkedIn
-              </a>
-            </>
-          )}
-          {resumeData.user_profile.github_url && (
-            <>
-              <span>|</span>
-              <a
-                href={resumeData.user_profile.github_url}
-                target="_blank"
-                className="hover:underline"
-              >
-                GitHub
-              </a>
-            </>
-          )}
-          {resumeData.user_profile.portfolio_url && (
-            <>
-              <span>|</span>
-              <a
-                href={resumeData.user_profile.portfolio_url}
-                target="_blank"
-                className="hover:underline"
-              >
-                Portfolio
-              </a>
-            </>
-          )}
-        </div>
-      </div>
-      <div className="p-6 space-y-6">
-        {resumeData.summary && (
-          <section>
-            <h2
-              className="text-xl font-bold mb-3 pb-1 border-b"
-              style={{
-                color: accentColor,
-                borderBottomColor: `${accentColor}40`,
-              }}
-            >
-              Professional Summary
-            </h2>
-            <div
-              className="text-gray-700 leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: resumeData.summary }}
-            />
-          </section>
-        )}
-        {Object.keys(resumeData.skills).some(
-          (cat) => resumeData.skills[cat].length > 0,
-        ) && (
-          <section>
-            <h2
-              className="text-xl font-bold mb-3 pb-1 border-b"
-              style={{
-                color: accentColor,
-                borderBottomColor: `${accentColor}40`,
-              }}
-            >
-              Skills
-            </h2>
-            <div className="space-y-3">
-              {Object.entries(resumeData.skills)
-                .filter(([_, items]) => items.length > 0)
-                .map(([category, items]) => (
-                  <div key={category}>
-                    <h3 className="font-semibold text-gray-800 capitalize">
-                      {category.replace(/_/g, " ")}
-                    </h3>
-                    <div className="flex flex-wrap gap-2 mt-1">
-                      {items.map((skill, idx) => (
-                        <span
-                          key={idx}
-                          className="px-3 py-1 bg-gray-100 rounded-full text-sm text-gray-700"
-                        >
-                          {skill}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-            </div>
-          </section>
-        )}
-        {resumeData.experience.length > 0 && (
-          <section>
-            <h2
-              className="text-xl font-bold mb-3 pb-1 border-b"
-              style={{
-                color: accentColor,
-                borderBottomColor: `${accentColor}40`,
-              }}
-            >
-              Experience
-            </h2>
-            <div className="space-y-5">
-              {resumeData.experience.map((exp) => (
-                <div key={exp.id}>
-                  <div className="flex justify-between items-start flex-wrap gap-2">
-                    <div>
-                      <h3 className="text-lg font-semibold text-gray-800">
-                        {exp.role}
-                      </h3>
-                      <p className="text-gray-600">
-                        {exp.company_name} • {exp.location}
-                      </p>
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {exp.start_date} -{" "}
-                      {exp.isPresentCompany ? "Present" : exp.end_date}
-                    </div>
-                  </div>
-                  <ul className="mt-2 space-y-1 list-disc list-inside text-gray-600">
-                    {exp.highlights?.map((highlight, idx) => (
-                      <li
-                        key={idx}
-                        className="text-sm"
-                        dangerouslySetInnerHTML={{ __html: highlight }}
-                      />
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-        {resumeData.projects.length > 0 && (
-          <section>
-            <h2
-              className="text-xl font-bold mb-3 pb-1 border-b"
-              style={{
-                color: accentColor,
-                borderBottomColor: `${accentColor}40`,
-              }}
-            >
-              Projects
-            </h2>
-            <div className="space-y-4">
-              {resumeData.projects.map((project) => (
-                <div key={project.id}>
-                  <div className="flex justify-between items-start flex-wrap gap-2">
-                    <h3 className="text-lg font-semibold text-gray-800">
-                      {project.project_name}
-                    </h3>
-                    <span className="text-sm text-gray-500">
-                      {project.duration}
-                    </span>
-                  </div>
-                  <div
-                    className="text-gray-600 text-sm mt-1"
-                    dangerouslySetInnerHTML={{ __html: project.description }}
-                  />
-                  <div className="flex flex-wrap gap-2 mt-2">
-                    {project.tech_stack?.map((tech, idx) => (
-                      <span
-                        key={idx}
-                        className="text-xs px-2 py-1 rounded-full"
-                        style={{
-                          backgroundColor: `${accentColor}10`,
-                          color: accentColor,
-                        }}
-                      >
-                        {tech}
-                      </span>
-                    ))}
-                  </div>
-                  <ul className="mt-2 space-y-1 list-disc list-inside text-gray-600">
-                    {project.highlights?.map((highlight, idx) => (
-                      <li key={idx} className="text-sm">
-                        {highlight}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-        {resumeData.education.length > 0 && (
-          <section>
-            <h2
-              className="text-xl font-bold mb-3 pb-1 border-b"
-              style={{
-                color: accentColor,
-                borderBottomColor: `${accentColor}40`,
-              }}
-            >
-              Education
-            </h2>
-            <div className="space-y-3">
-              {resumeData.education.map((edu) => (
-                <div key={edu.id}>
-                  <div className="flex justify-between items-start flex-wrap gap-2">
-                    <h3 className="text-lg font-semibold text-gray-800">
-                      {edu.degree_name}
-                    </h3>
-                    <span className="text-sm text-gray-500">
-                      {edu.start_year} - {edu.end_year}
-                    </span>
-                  </div>
-                  <p className="text-gray-600">{edu.institution_name}</p>
-                  {edu.grade && (
-                    <p className="text-sm text-gray-500">Grade: {edu.grade}</p>
-                  )}
-                  <ul className="mt-1 space-y-1 list-disc list-inside text-gray-600">
-                    {edu.highlights?.map((highlight, idx) => (
-                      <li key={idx} className="text-sm">
-                        {highlight}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-        {resumeData.certifications.length > 0 && (
-          <section>
-            <h2
-              className="text-xl font-bold mb-3 pb-1 border-b"
-              style={{
-                color: accentColor,
-                borderBottomColor: `${accentColor}40`,
-              }}
-            >
-              Certifications
-            </h2>
-            <div className="space-y-2">
-              {resumeData.certifications.map((cert) => (
-                <div key={cert.id}>
-                  <div className="flex justify-between items-start">
-                    <span className="font-medium text-gray-800">
-                      {cert.name}
-                    </span>
-                    <span className="text-sm text-gray-500">{cert.year}</span>
-                  </div>
-                  <p className="text-sm text-gray-600">{cert.issuer}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-        {resumeData.achievements.length > 0 && (
-          <section>
-            <h2
-              className="text-xl font-bold mb-3 pb-1 border-b"
-              style={{
-                color: accentColor,
-                borderBottomColor: `${accentColor}40`,
-              }}
-            >
-              Achievements
-            </h2>
-            <div className="space-y-3">
-              {resumeData.achievements.map((ach) => (
-                <div key={ach.id}>
-                  <div className="flex justify-between items-start">
-                    <h3 className="font-semibold text-gray-800">{ach.title}</h3>
-                    <span className="text-sm text-gray-500">{ach.year}</span>
-                  </div>
-                  <div
-                    className="text-gray-600 text-sm"
-                    dangerouslySetInnerHTML={{ __html: ach.description }}
-                  />
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-        {resumeData.languages.length > 0 && (
-          <section>
-            <h2
-              className="text-xl font-bold mb-3 pb-1 border-b"
-              style={{
-                color: accentColor,
-                borderBottomColor: `${accentColor}40`,
-              }}
-            >
-              Languages
-            </h2>
-            <div className="flex flex-wrap gap-4">
-              {resumeData.languages.map((lang) => (
-                <div key={lang.id}>
-                  <span className="font-medium text-gray-800">{lang.name}</span>
-                  <span className="text-sm text-gray-500 ml-2">
-                    ({lang.proficiency})
-                  </span>
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-        {resumeData.volunteering.length > 0 && (
-          <section>
-            <h2
-              className="text-xl font-bold mb-3 pb-1 border-b"
-              style={{
-                color: accentColor,
-                borderBottomColor: `${accentColor}40`,
-              }}
-            >
-              Volunteering
-            </h2>
-            <div className="space-y-3">
-              {resumeData.volunteering.map((vol) => (
-                <div key={vol.id}>
-                  <div className="flex justify-between items-start">
-                    <h3 className="font-semibold text-gray-800">
-                      {vol.role} at {vol.organization}
-                    </h3>
-                    <span className="text-sm text-gray-500">
-                      {vol.duration}
-                    </span>
-                  </div>
-                  <div
-                    className="text-gray-600 text-sm"
-                    dangerouslySetInnerHTML={{ __html: vol.description }}
-                  />
-                </div>
-              ))}
-            </div>
-          </section>
-        )}
-        {resumeData.hobbies.length > 0 && (
-          <section>
-            <h2
-              className="text-xl font-bold mb-3 pb-1 border-b"
-              style={{
-                color: accentColor,
-                borderBottomColor: `${accentColor}40`,
-              }}
-            >
-              Hobbies & Interests
-            </h2>
-            <div className="flex flex-wrap gap-2">
-              {resumeData.hobbies.map((hobby, idx) => (
-                <span
-                  key={idx}
-                  className="px-3 py-1 bg-gray-100 rounded-full text-sm text-gray-700"
-                >
-                  {hobby}
-                </span>
-              ))}
-            </div>
-          </section>
-        )}
-        {resumeData.custom_sections.map((section) => (
-          <section key={section.id}>
-            <h2
-              className="text-xl font-bold mb-3 pb-1 border-b"
-              style={{
-                color: accentColor,
-                borderBottomColor: `${accentColor}40`,
-              }}
-            >
-              {section.title}
-            </h2>
-            <div className="space-y-1">
-              {section.items.map((item, idx) => (
-                <p key={idx} className="text-gray-700">
-                  {item}
-                </p>
-              ))}
-            </div>
-          </section>
-        ))}
-      </div>
-    </div>
-  );
-
   return (
-    <div className="min-h-screen">
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-40">
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-white border-b border-gray-200 sticky top-0 z-40 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-2">
@@ -2190,7 +330,6 @@ const BuildResume = () => {
               </span>
             </div>
             <div className="flex items-center gap-3">
-              {/* Save Button */}
               <button
                 onClick={saveResume}
                 disabled={isSaving}
@@ -2206,7 +345,7 @@ const BuildResume = () => {
 
               <button
                 onClick={() => setShowQuickFill(true)}
-                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                className="flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
               >
                 <Wand2 size={18} /> AI Quick Build
               </button>
@@ -2237,7 +376,6 @@ const BuildResume = () => {
         </div>
       </div>
 
-      {/* Save Status Toast Notification */}
       {saveStatus.show && (
         <div
           className={`fixed top-20 right-4 z-50 flex items-center gap-3 px-4 py-3 rounded-lg shadow-lg animate-slide-in ${
@@ -2267,10 +405,10 @@ const BuildResume = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {isPreviewMode ? (
-          <ResumePreview />
+          <ResumePreview accentColor={accentColor} />
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-            {/* Left Column - Same as before */}
+            {/* Left Column */}
             <div className="lg:col-span-1 space-y-6">
               {/* Profile Card */}
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -2327,7 +465,10 @@ const BuildResume = () => {
                   <h2 className="font-semibold">Professional Summary</h2>
                   <div className="flex gap-2">
                     <button
-                      onClick={() => setEditingSummary(true)}
+                      onClick={() => {
+                        setTempSummary(resumeData.summary);
+                        setEditingSummary(true);
+                      }}
                       className="text-blue-600 text-sm"
                     >
                       <Edit2 size={14} /> Edit
@@ -2496,7 +637,7 @@ const BuildResume = () => {
               </div>
             </div>
 
-            {/* Right Column - Same as before */}
+            {/* Right Column */}
             <div className="lg:col-span-2 space-y-6">
               {/* Experience Card */}
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -2549,7 +690,7 @@ const BuildResume = () => {
                           </li>
                         )}
                       </ul>
-                      <div className="absolute top-0 right-0 flex gap-1 opacity-0 group-hover:opacity-100">
+                      <div className="absolute top-0 right-0 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => {
                             setEditingItem({ type: "experience", data: exp });
@@ -2627,7 +768,7 @@ const BuildResume = () => {
                           </span>
                         )}
                       </div>
-                      <div className="absolute top-0 right-0 flex gap-1 opacity-0 group-hover:opacity-100">
+                      <div className="absolute top-0 right-0 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => {
                             setEditingItem({ type: "projects", data: project });
@@ -2686,7 +827,7 @@ const BuildResume = () => {
                           Grade: {edu.grade}
                         </p>
                       )}
-                      <div className="absolute top-0 right-0 flex gap-1 opacity-0 group-hover:opacity-100">
+                      <div className="absolute top-0 right-0 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={() => {
                             setEditingItem({ type: "education", data: edu });
@@ -2735,7 +876,7 @@ const BuildResume = () => {
                           className="text-sm text-gray-600"
                           dangerouslySetInnerHTML={{ __html: ach.description }}
                         />
-                        <div className="absolute top-0 right-0 flex gap-1 opacity-0 group-hover:opacity-100">
+                        <div className="absolute top-0 right-0 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                           <button
                             onClick={() => {
                               setEditingItem({
@@ -2827,7 +968,7 @@ const BuildResume = () => {
         )}
       </div>
 
-      {/* Modals - Same as before */}
+      {/* Modals */}
       <Modal
         isOpen={activeSection === "personal"}
         onClose={() => setActiveSection(null)}
@@ -2842,33 +983,53 @@ const BuildResume = () => {
           onClose={() => setActiveSection(null)}
         />
       </Modal>
+
+      {/* Fixed Summary Modal */}
       <Modal
         isOpen={editingSummary}
         onClose={() => setEditingSummary(false)}
-        title="Edit Summary"
+        title="Edit Professional Summary"
       >
         <div className="space-y-4">
           <RichTextEditor
-            value={resumeData.summary}
-            onChange={updateSummary}
+            value={tempSummary}
+            onChange={setTempSummary}
             placeholder="Write your professional summary..."
           />
           <div className="flex justify-end gap-3">
             <button
+              onClick={() => {
+                setAiContext({
+                  content: tempSummary,
+                  sectionType: "summary",
+                  fieldName: "Professional Summary",
+                });
+                setShowAIAssistant(true);
+                setEditingSummary(false);
+              }}
+              className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors flex items-center gap-2"
+            >
+              <Wand2 size={16} /> Generate with AI
+            </button>
+            <button
               onClick={() => setEditingSummary(false)}
-              className="px-4 py-2 text-gray-600 rounded-lg"
+              className="px-4 py-2 text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
             >
               Cancel
             </button>
             <button
-              onClick={() => setEditingSummary(false)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+              onClick={() => {
+                updateResumeData("summary", tempSummary);
+                setEditingSummary(false);
+              }}
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
             >
-              Save
+              Save Summary
             </button>
           </div>
         </div>
       </Modal>
+
       <Modal
         isOpen={activeSection === "skills"}
         onClose={() => setActiveSection(null)}
@@ -2900,7 +1061,7 @@ const BuildResume = () => {
                 <input
                   type="text"
                   placeholder={`Add ${category.replace(/_/g, " ")}`}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg"
+                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   onKeyPress={(e) => {
                     if (e.key === "Enter") {
                       addSkillItem(category, e.target.value);
@@ -2914,7 +1075,7 @@ const BuildResume = () => {
                     addSkillItem(category, input.value);
                     input.value = "";
                   }}
-                  className="px-4 py-2 bg-gray-100 rounded-lg"
+                  className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200"
                 >
                   Add
                 </button>
@@ -2924,13 +1085,14 @@ const BuildResume = () => {
           <div className="flex justify-end">
             <button
               onClick={() => setActiveSection(null)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
               Done
             </button>
           </div>
         </div>
       </Modal>
+
       <Modal
         isOpen={activeSection === "experience"}
         onClose={() => setActiveSection(null)}
@@ -2944,6 +1106,7 @@ const BuildResume = () => {
           onCancel={() => setActiveSection(null)}
         />
       </Modal>
+
       <Modal
         isOpen={activeSection === "experienceEdit"}
         onClose={() => setActiveSection(null)}
@@ -2962,6 +1125,7 @@ const BuildResume = () => {
           }}
         />
       </Modal>
+
       <Modal
         isOpen={activeSection === "projects"}
         onClose={() => setActiveSection(null)}
@@ -2975,6 +1139,7 @@ const BuildResume = () => {
           onCancel={() => setActiveSection(null)}
         />
       </Modal>
+
       <Modal
         isOpen={activeSection === "projectsEdit"}
         onClose={() => setActiveSection(null)}
@@ -2993,6 +1158,7 @@ const BuildResume = () => {
           }}
         />
       </Modal>
+
       <Modal
         isOpen={activeSection === "education"}
         onClose={() => setActiveSection(null)}
@@ -3006,6 +1172,7 @@ const BuildResume = () => {
           onCancel={() => setActiveSection(null)}
         />
       </Modal>
+
       <Modal
         isOpen={activeSection === "educationEdit"}
         onClose={() => setActiveSection(null)}
@@ -3024,6 +1191,7 @@ const BuildResume = () => {
           }}
         />
       </Modal>
+
       <Modal
         isOpen={activeSection === "certifications"}
         onClose={() => setActiveSection(null)}
@@ -3037,6 +1205,7 @@ const BuildResume = () => {
           onCancel={() => setActiveSection(null)}
         />
       </Modal>
+
       <Modal
         isOpen={activeSection === "certificationsEdit"}
         onClose={() => setActiveSection(null)}
@@ -3055,6 +1224,7 @@ const BuildResume = () => {
           }}
         />
       </Modal>
+
       <Modal
         isOpen={activeSection === "achievements"}
         onClose={() => setActiveSection(null)}
@@ -3068,6 +1238,7 @@ const BuildResume = () => {
           onCancel={() => setActiveSection(null)}
         />
       </Modal>
+
       <Modal
         isOpen={activeSection === "achievementsEdit"}
         onClose={() => setActiveSection(null)}
@@ -3086,68 +1257,7 @@ const BuildResume = () => {
           }}
         />
       </Modal>
-      <Modal
-        isOpen={activeSection === "languages"}
-        onClose={() => setActiveSection(null)}
-        title="Add Language"
-      >
-        <LanguageForm
-          onSave={(data) => {
-            addLanguage(data);
-            setActiveSection(null);
-          }}
-          onCancel={() => setActiveSection(null)}
-        />
-      </Modal>
-      <Modal
-        isOpen={activeSection === "languagesEdit"}
-        onClose={() => setActiveSection(null)}
-        title="Edit Language"
-      >
-        <LanguageForm
-          lang={editingItem?.data}
-          onSave={(data) => {
-            updateLanguage(editingItem.data.id, data);
-            setActiveSection(null);
-            setEditingItem(null);
-          }}
-          onCancel={() => {
-            setActiveSection(null);
-            setEditingItem(null);
-          }}
-        />
-      </Modal>
-      <Modal
-        isOpen={activeSection === "volunteering"}
-        onClose={() => setActiveSection(null)}
-        title="Add Volunteering"
-      >
-        <VolunteeringForm
-          onSave={(data) => {
-            addVolunteering(data);
-            setActiveSection(null);
-          }}
-          onCancel={() => setActiveSection(null)}
-        />
-      </Modal>
-      <Modal
-        isOpen={activeSection === "volunteeringEdit"}
-        onClose={() => setActiveSection(null)}
-        title="Edit Volunteering"
-      >
-        <VolunteeringForm
-          vol={editingItem?.data}
-          onSave={(data) => {
-            updateVolunteering(editingItem.data.id, data);
-            setActiveSection(null);
-            setEditingItem(null);
-          }}
-          onCancel={() => {
-            setActiveSection(null);
-            setEditingItem(null);
-          }}
-        />
-      </Modal>
+
       <Modal
         isOpen={activeSection === "hobbies"}
         onClose={() => setActiveSection(null)}
@@ -3178,7 +1288,7 @@ const BuildResume = () => {
             <input
               type="text"
               placeholder="Add hobby"
-              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg"
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               onKeyPress={(e) => {
                 if (e.key === "Enter") {
                   updateResumeData("hobbies", [
@@ -3200,7 +1310,7 @@ const BuildResume = () => {
                   input.value = "";
                 }
               }}
-              className="px-4 py-2 bg-gray-100 rounded-lg"
+              className="px-4 py-2 bg-gray-100 rounded-lg hover:bg-gray-200"
             >
               Add
             </button>
@@ -3208,13 +1318,14 @@ const BuildResume = () => {
           <div className="flex justify-end">
             <button
               onClick={() => setActiveSection(null)}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
             >
               Done
             </button>
           </div>
         </div>
       </Modal>
+
       <Modal
         isOpen={showCustomSection}
         onClose={() => {
@@ -3247,7 +1358,10 @@ const BuildResume = () => {
         <AIAssistant
           currentContent={aiContext.content}
           onUpdate={(newContent) => {
-            if (editingSummary) updateSummary(newContent);
+            if (aiContext.sectionType === "summary") {
+              setTempSummary(newContent);
+              setEditingSummary(true);
+            }
             setShowAIAssistant(false);
           }}
           onClose={() => setShowAIAssistant(false)}
@@ -3255,6 +1369,7 @@ const BuildResume = () => {
           fieldName={aiContext.fieldName}
         />
       )}
+
       {showQuickFill && (
         <QuickFillForm
           onGenerate={(newData) => {

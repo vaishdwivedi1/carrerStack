@@ -3,3 +3,35 @@
 ::-webkit-scrollbar {
   display: none;
 }
+
+/* Rich Text Editor List Styles */
+.rich-text-editor ul,
+.rich-text-editor ol {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
+}
+
+.rich-text-editor ul {
+  list-style-type: disc;
+}
+
+.rich-text-editor ol {
+  list-style-type: decimal;
+}
+
+.rich-text-editor li {
+  margin: 0.25rem 0;
+  line-height: 1.5;
+}
+
+/* For dash lists */
+.rich-text-editor .dash-list {
+  list-style-type: none;
+  padding-left: 1rem;
+}
+
+.rich-text-editor .dash-list li::before {
+  content: "- ";
+  position: absolute;
+  margin-left: -1rem;
+}
